@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>前端导出测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 3px;
+            white-space: pre-wrap;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <h1>前端导出功能测试</h1>
+    <p>测试前端应用的导出功能（通过代理）</p>
+    
+    <div class="test-section">
+        <h3>1. 登录获取Token</h3>
+        <input type="text" id="username" placeholder="用户名" value="admin">
+        <input type="password" id="password" placeholder="密码" value="admin123">
+        <button onclick="login()">登录</button>
+        <div id="login-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. 测试导出（通过前端代理）</h3>
+        <button onclick="testExportViaProxy()">通过代理导出</button>
+        <button onclick="testExportDirect()">直接导出</button>
+        <div id="export-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. 模拟前端组件导出</h3>
+        <button onclick="simulateFrontendExport()">模拟前端导出</button>
+        <div id="frontend-result" class="result"></div>
+    </div>
+
+    <script>
+        let authToken = localStorage.getItem('token');
+
+        async function login() {
+            const resultDiv = document.getElementById('login-result');
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                // 通过前端代理登录
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.data?.token) {
+                    authToken = data.data.token;
+                    localStorage.setItem('token', authToken);
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `登录成功!\nToken: ${authToken.substring(0, 50)}...`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `登录失败: ${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `登录错误: ${error.message}`;
+            }
+        }
+
+        async function testExportViaProxy() {
+            const resultDiv = document.getElementById('export-result');
+            
+            if (!authToken) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '请先登录获取token';
+                return;
+            }
+
+            try {
+                console.log('🔍 开始通过代理导出...');
+                console.log('🔑 Token:', authToken.substring(0, 50) + '...');
+
+                const response = await fetch('/api/export/simple', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                console.log('📊 响应状态:', response.status);
+                console.log('📄 Content-Type:', response.headers.get('content-type'));
+
+                if (response.ok) {
+                    const text = await response.text();
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `导出成功!\n状态: ${response.status}\nContent-Type: ${response.headers.get('content-type')}\n内容预览:\n${text.substring(0, 300)}...`;
+                } else {
+                    const errorText = await response.text();
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `导出失败:\n状态: ${response.status}\n错误: ${errorText}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `导出错误: ${error.message}`;
+            }
+        }
+
+        async function testExportDirect() {
+            const resultDiv = document.getElementById('export-result');
+            
+            if (!authToken) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '请先登录获取token';
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3000/api/export/simple', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    const text = await response.text();
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `直接导出成功!\n状态: ${response.status}\n内容预览:\n${text.substring(0, 300)}...`;
+                } else {
+                    const errorText = await response.text();
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `直接导出失败:\n状态: ${response.status}\n错误: ${errorText}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `直接导出错误: ${error.message}`;
+            }
+        }
+
+        async function simulateFrontendExport() {
+            const resultDiv = document.getElementById('frontend-result');
+            
+            if (!authToken) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '请先登录获取token';
+                return;
+            }
+
+            try {
+                console.log('🔍 模拟前端组件导出...');
+                console.log('🔑 Token:', authToken ? authToken.substring(0, 50) + '...' : 'null');
+
+                const response = await fetch('/api/export/simple', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                console.log('📊 响应状态:', response.status);
+                console.log('📄 Content-Type:', response.headers.get('content-type'));
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `navigation-export-${new Date().toISOString().split('T')[0]}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = '✅ 模拟前端导出成功! 文件已下载。';
+                } else {
+                    const errorText = await response.text();
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ 模拟前端导出失败:\n状态: ${response.status}\n错误: ${errorText}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ 模拟前端导出错误: ${error.message}`;
+            }
+        }
+
+        // 页面加载时显示当前token状态
+        window.onload = function() {
+            if (authToken) {
+                document.getElementById('login-result').textContent = `已有token: ${authToken.substring(0, 50)}...`;
+                document.getElementById('login-result').className = 'result success';
+            }
+        };
+    </script>
+</body>
+</html>

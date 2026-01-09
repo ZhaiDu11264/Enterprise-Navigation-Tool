@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grid Settings Test</title>
+    <style>
+        :root {
+            --grid-min-width: 220px;
+            --grid-compact-min-width: 160px;
+        }
+
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(var(--grid-min-width), 1fr));
+            gap: 1rem;
+            padding: 1rem;
+            background: #f0f0f0;
+        }
+
+        .test-item {
+            background: #3b82f6;
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .controls {
+            padding: 1rem;
+            background: #fff;
+            margin-bottom: 1rem;
+        }
+
+        button {
+            margin: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .current-size {
+            font-weight: bold;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <h2>Grid Size Test</h2>
+        <div class="current-size">Current: <span id="current">Medium (220px)</span></div>
+        <button onclick="setGridSize('160px', 'Small (160px)')">Small</button>
+        <button onclick="setGridSize('220px', 'Medium (220px)')">Medium</button>
+        <button onclick="setGridSize('280px', 'Large (280px)')">Large</button>
+        <button onclick="setGridSize('340px', 'Extra Large (340px)')">Extra Large</button>
+    </div>
+
+    <div class="test-grid">
+        <div class="test-item">Item 1</div>
+        <div class="test-item">Item 2</div>
+        <div class="test-item">Item 3</div>
+        <div class="test-item">Item 4</div>
+        <div class="test-item">Item 5</div>
+        <div class="test-item">Item 6</div>
+        <div class="test-item">Item 7</div>
+        <div class="test-item">Item 8</div>
+        <div class="test-item">Item 9</div>
+        <div class="test-item">Item 10</div>
+    </div>
+
+    <script>
+        function setGridSize(size, label) {
+            document.documentElement.style.setProperty('--grid-min-width', size);
+            document.getElementById('current').textContent = label;
+            console.log('Grid size changed to:', size);
+        }
+    </script>
+</body>
+</html>

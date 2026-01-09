@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>现代化搜索栏演示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .demo-container {
+            text-align: center;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .title {
+            color: white;
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.25rem;
+            margin-bottom: 3rem;
+            font-weight: 300;
+        }
+
+        /* Modern Search Bar Styles */
+        .modern-search-bar {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto 2rem;
+        }
+
+        .search-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(0, 0, 0, 0.1);
+            border-radius: 24px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .search-container:hover {
+            border-color: rgba(0, 0, 0, 0.15);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+        }
+
+        .search-container.focused {
+            border-color: #4285f4;
+            box-shadow: 0 4px 20px rgba(66, 133, 244, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .engine-selector {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .engine-selector:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .engine-icon {
+            font-size: 16px;
+            margin-right: 8px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 16px 20px;
+            border: none;
+            outline: none;
+            font-size: 16px;
+            background: transparent;
+            color: #202124;
+        }
+
+        .search-input::placeholder {
+            color: #9aa0a6;
+        }
+
+        .search-actions {
+            display: flex;
+            align-items: center;
+            padding-right: 8px;
+            gap: 4px;
+        }
+
+        .action-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 50%;
+            background: transparent;
+            color: #5f6368;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .action-btn:hover {
+            background: rgba(66, 133, 244, 0.1);
+            color: #4285f4;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 4rem;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 16px;
+            text-align: center;
+            color: white;
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .feature-description {
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2rem;
+            }
+
+            .subtitle {
+                font-size: 1rem;
+            }
+
+            .features {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .feature-card {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <h1 class="title">现代化搜索栏</h1>
+        <p class="subtitle">参考 lemon-new-tab-page 设计理念</p>
+
+        <div class="modern-search-bar">
+            <div class="search-container" id="searchContainer">
+                <div class="engine-selector" onclick="toggleEngineSelector()">
+                    <span class="engine-icon" id="currentEngineIcon">🔍</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M7 10l5 5 5-5z"/>
+                    </svg>
+                </div>
+                
+                <input 
+                    type="text" 
+                    class="search-input" 
+                    placeholder="Search Google or type a URL"
+                    id="searchInput"
+                    onfocus="handleFocus()"
+                    onblur="handleBlur()"
+                    onkeydown="handleKeyDown(event)"
+                    oninput="handleInput(event)"
+                />
+                
+                <div class="search-actions">
+                    <button class="action-btn" onclick="clearSearch()" title="Clear">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                        </svg>
+                    </button>
+                    
+                    <button class="action-btn" onclick="performSearch()" title="Search">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="features">
+            <div class="feature-card">
+                <div class="feature-icon">🔍</div>
+                <h3 class="feature-title">多引擎搜索</h3>
+                <p class="feature-description">支持 Google、Bing、DuckDuckGo、百度等多个搜索引擎</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3 class="feature-title">即时建议</h3>
+                <p class="feature-description">实时显示搜索建议和快速访问链接</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">🎨</div>
+                <h3 class="feature-title">现代设计</h3>
+                <p class="feature-description">简洁优雅的界面设计，支持毛玻璃效果</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">📱</div>
+                <h3 class="feature-title">响应式</h3>
+                <p class="feature-description">完美适配各种设备尺寸和屏幕分辨率</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const searchEngines = [
+            { name: 'Google', icon: '🔍', url: 'https://www.google.com/search?q=', placeholder: 'Search Google or type a URL' },
+            { name: 'Bing', icon: '🔎', url: 'https://www.bing.com/search?q=', placeholder: 'Search Bing or type a URL' },
+            { name: 'DuckDuckGo', icon: '🦆', url: 'https://duckduckgo.com/?q=', placeholder: 'Search DuckDuckGo or type a URL' },
+            { name: 'Baidu', icon: '百', url: 'https://www.baidu.com/s?wd=', placeholder: '百度搜索或输入网址' }
+        ];
+
+        let currentEngine = searchEngines[0];
+
+        function handleFocus() {
+            document.getElementById('searchContainer').classList.add('focused');
+        }
+
+        function handleBlur() {
+            setTimeout(() => {
+                document.getElementById('searchContainer').classList.remove('focused');
+            }, 150);
+        }
+
+        function handleInput(event) {
+            const query = event.target.value;
+            // 这里可以添加实时搜索建议逻辑
+            console.log('Search query:', query);
+        }
+
+        function handleKeyDown(event) {
+            if (event.key === 'Enter') {
+                performSearch();
+            } else if (event.key === 'Escape') {
+                clearSearch();
+            }
+        }
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('searchInput').focus();
+        }
+
+        function performSearch() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) return;
+
+            // 检查是否是URL
+            const isUrl = /^https?:\/\//.test(query) || /^[a-zA-Z0-9-]+\.[a-zA-Z]{2,}/.test(query);
+            
+            if (isUrl) {
+                const url = query.startsWith('http') ? query : `https://${query}`;
+                window.open(url, '_blank');
+            } else {
+                const searchUrl = currentEngine.url + encodeURIComponent(query);
+                window.open(searchUrl, '_blank');
+            }
+        }
+
+        function toggleEngineSelector() {
+            // 这里可以添加引擎选择器的显示/隐藏逻辑
+            const engines = searchEngines.map(engine => engine.name).join(', ');
+            alert(`可选搜索引擎: ${engines}\n当前: ${currentEngine.name}`);
+        }
+
+        // 添加一些交互动画
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchContainer = document.getElementById('searchContainer');
+            
+            // 添加悬停效果
+            searchContainer.addEventListener('mouseenter', function() {
+                if (!this.classList.contains('focused')) {
+                    this.style.transform = 'translateY(-2px)';
+                }
+            });
+            
+            searchContainer.addEventListener('mouseleave', function() {
+                if (!this.classList.contains('focused')) {
+                    this.style.transform = 'translateY(0)';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

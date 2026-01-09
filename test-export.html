@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试导出功能</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .log {
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+        .input-group {
+            margin: 10px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>导出功能测试</h1>
+        
+        <div class="input-group">
+            <label for="token">JWT Token:</label>
+            <input type="text" id="token" placeholder="输入JWT token">
+        </div>
+        
+        <button onclick="testExport()">测试导出</button>
+        <button onclick="clearLog()">清除日志</button>
+        
+        <div id="log" class="log">准备测试导出功能...\n</div>
+    </div>
+
+    <script>
+        function log(message) {
+            const logElement = document.getElementById('log');
+            logElement.textContent += new Date().toLocaleTimeString() + ' - ' + message + '\n';
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').textContent = '';
+        }
+
+        async function testExport() {
+            const token = document.getElementById('token').value || 'test-token';
+            
+            try {
+                log('🔄 开始测试导出...');
+                log('📡 发送请求到: /api/export/simple');
+                
+                const response = await fetch('/api/export/simple', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                log(`📡 响应状态: ${response.status} ${response.statusText}`);
+                log(`📡 响应头: ${JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2)}`);
+
+                if (response.ok) {
+                    log('✅ 响应成功，处理数据...');
+                    
+                    const contentType = response.headers.get('content-type');
+                    log(`📦 内容类型: ${contentType}`);
+                    
+                    if (contentType && contentType.includes('text/csv')) {
+                        // CSV 数据
+                        const csvText = await response.text();
+                        log(`📄 CSV 内容 (前200字符): ${csvText.substring(0, 200)}...`);
+                        
+                        // 创建下载
+                        const blob = new Blob([csvText], { type: 'text/csv;charset=utf-8' });
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `test-export-${new Date().toISOString().split('T')[0]}.csv`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        window.URL.revokeObjectURL(url);
+                        
+                        log('✅ 文件下载完成');
+                    } else {
+                        // 可能是 JSON 错误响应
+                        const text = await response.text();
+                        log(`⚠️ 非CSV响应: ${text}`);
+                    }
+                } else {
+                    const errorText = await response.text();
+                    log(`❌ 请求失败: ${errorText}`);
+                }
+            } catch (error) {
+                log(`❌ 发生错误: ${error.message}`);
+                console.error('Export test error:', error);
+            }
+        }
+
+        // 页面加载时的初始化
+        log('页面已加载，请输入有效的JWT token进行测试');
+        log('提示：可以从浏览器开发者工具的localStorage中获取token');
+    </script>
+</body>
+</html>

@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>搜索栏调试测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .debug-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        .debug-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .debug-info {
+            font-family: 'Courier New', monospace;
+            background: #fff;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            white-space: pre-wrap;
+            font-size: 14px;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .instructions {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #007bff;
+            margin-bottom: 20px;
+        }
+        .instructions h3 {
+            margin: 0 0 10px 0;
+            color: #0056b3;
+        }
+        .instructions ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .instructions li {
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 搜索栏功能调试</h1>
+        
+        <div class="instructions">
+            <h3>📋 调试步骤</h3>
+            <ol>
+                <li>打开浏览器开发者工具 (F12)</li>
+                <li>切换到 Console 标签页</li>
+                <li>访问前端应用: <strong>http://localhost:3001</strong></li>
+                <li>查看搜索栏是否显示</li>
+                <li>按照下面的测试步骤进行验证</li>
+            </ol>
+        </div>
+
+        <div class="debug-section">
+            <div class="debug-title">1. 搜索引擎切换测试</div>
+            <div class="debug-info">
+测试步骤:
+1. 找到搜索栏左侧的搜索引擎图标 (应该显示 "百")
+2. 点击该图标，应该弹出下拉菜单
+3. 下拉菜单应该包含: 百度、Google、Yandex、搜狗、必应、360
+4. 选择不同的搜索引擎，观察图标是否改变
+5. 输入框的占位符文本是否相应更新
+
+预期结果:
+- 默认显示百度 (图标: 百)
+- 点击后显示6个搜索引擎选项
+- 选择后图标和占位符文本更新
+- 搜索时跳转到对应搜索引擎
+
+如果失败，检查:
+- 浏览器控制台是否有JavaScript错误
+- ModernSearchBar组件是否正确加载
+- CSS样式是否正确应用
+            </div>
+        </div>
+
+        <div class="debug-section">
+            <div class="debug-title">2. 搜索记录功能测试</div>
+            <div class="debug-info">
+测试步骤:
+1. 在搜索栏输入一些搜索词 (如: "测试搜索")
+2. 按回车执行搜索
+3. 重复几次，输入不同的搜索词
+4. 清空搜索框并点击搜索框
+5. 应该显示 "搜索记录" 下拉菜单
+6. 点击历史记录项应该自动搜索
+
+预期结果:
+- 搜索后历史记录自动保存
+- 点击空搜索框显示搜索记录
+- 最多显示10条记录
+- 有清除搜索记录按钮
+
+如果失败，检查:
+- localStorage是否可用
+- 浏览器控制台是否有存储相关错误
+- 搜索记录状态是否正确更新
+            </div>
+        </div>
+
+        <div class="debug-section">
+            <div class="debug-title">3. 浏览器控制台检查</div>
+            <div class="debug-info">
+在浏览器控制台中运行以下命令来检查状态:
+
+// 检查localStorage中的搜索记录
+console.log('搜索记录:', localStorage.getItem('searchHistory'));
+
+// 检查ModernSearchBar组件是否加载
+console.log('搜索栏元素:', document.querySelector('.modern-search-bar'));
+
+// 检查搜索引擎选择器
+console.log('搜索引擎选择器:', document.querySelector('.search-engine-selector'));
+
+// 检查是否有React错误
+console.log('React错误:', window.__REACT_DEVTOOLS_GLOBAL_HOOK__?.onCommitFiberRoot);
+
+如果这些命令返回null或undefined，说明组件没有正确渲染。
+            </div>
+        </div>
+
+        <div class="debug-section">
+            <div class="debug-title">4. 常见问题排查</div>
+            <div class="debug-info">
+问题1: 搜索引擎无法切换
+- 检查是否有JavaScript错误阻止事件处理
+- 确认showSearchEngines属性为true
+- 检查CSS样式是否隐藏了下拉菜单
+
+问题2: 搜索记录不显示
+- 确认localStorage功能正常
+- 检查是否有隐私模式或扩展阻止存储
+- 验证搜索记录状态更新逻辑
+
+问题3: 组件完全不显示
+- 检查ModernSearchBar是否正确导入
+- 确认CSS文件是否正确加载
+- 检查React组件渲染错误
+
+问题4: 样式显示异常
+- 检查ModernSearchBar.css是否正确加载
+- 确认没有CSS冲突
+- 验证响应式样式是否正确应用
+            </div>
+        </div>
+
+        <div class="debug-section">
+            <div class="debug-title">5. 手动测试清单</div>
+            <div class="debug-info">
+□ 搜索栏在页面中可见
+□ 搜索引擎图标显示 "百"
+□ 点击搜索引擎图标显示下拉菜单
+□ 下拉菜单包含6个搜索引擎选项
+□ 选择不同搜索引擎时图标更新
+□ 占位符文本相应更新
+□ 输入搜索词并按回车能正常搜索
+□ 搜索后历史记录被保存
+□ 点击空搜索框显示搜索记录
+□ 点击历史记录项能快速搜索
+□ 清除搜索记录按钮正常工作
+□ 键盘导航 (上下箭头) 正常工作
+□ ESC键能关闭下拉菜单
+□ 内部链接建议正常显示
+
+如果以上任何项目失败，请查看浏览器控制台错误信息。
+            </div>
+        </div>
+
+        <div class="debug-section">
+            <div class="debug-title">6. 快速修复建议</div>
+            <div class="debug-info">
+如果功能仍然不工作，尝试以下步骤:
+
+1. 硬刷新页面 (Ctrl+F5 或 Cmd+Shift+R)
+2. 清除浏览器缓存和localStorage
+3. 检查网络请求是否成功加载所有资源
+4. 确认前端服务器正在运行 (http://localhost:3001)
+5. 检查是否有浏览器扩展干扰
+6. 尝试在无痕模式下测试
+
+如果问题持续存在，可能需要:
+- 重新编译前端代码
+- 检查组件导入路径
+- 验证TypeScript编译是否成功
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 简单的调试脚本
+        console.log('🔍 搜索栏调试页面已加载');
+        console.log('当前时间:', new Date().toLocaleString());
+        console.log('用户代理:', navigator.userAgent);
+        console.log('localStorage可用:', typeof Storage !== "undefined");
+        
+        // 检查localStorage中的搜索记录
+        setTimeout(() => {
+            const searchHistory = localStorage.getItem('searchHistory');
+            console.log('当前搜索记录:', searchHistory);
+        }, 1000);
+    </script>
+</body>
+</html>

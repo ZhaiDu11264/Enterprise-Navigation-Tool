@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings Debug</title>
+</head>
+<body>
+    <h1>Settings Debug Test</h1>
+    <p>Open browser console and check:</p>
+    <ol>
+        <li>localStorage.getItem('ui_grid_size')</li>
+        <li>getComputedStyle(document.documentElement).getPropertyValue('--grid-min-width')</li>
+        <li>Check if SettingsContext is working</li>
+    </ol>
+
+    <script>
+        console.log('=== Settings Debug ===');
+        console.log('Grid size in localStorage:', localStorage.getItem('ui_grid_size'));
+        console.log('CSS variable --grid-min-width:', getComputedStyle(document.documentElement).getPropertyValue('--grid-min-width'));
+        console.log('CSS variable --grid-compact-min-width:', getComputedStyle(document.documentElement).getPropertyValue('--grid-compact-min-width'));
+        
+        // Test setting values
+        console.log('Testing localStorage...');
+        localStorage.setItem('ui_grid_size', 'large');
+        console.log('Set grid size to large:', localStorage.getItem('ui_grid_size'));
+        
+        // Test CSS variables
+        console.log('Testing CSS variables...');
+        document.documentElement.style.setProperty('--grid-min-width', '340px');
+        document.documentElement.style.setProperty('--grid-compact-min-width', '240px');
+        console.log('Updated --grid-min-width:', getComputedStyle(document.documentElement).getPropertyValue('--grid-min-width'));
+        console.log('Updated --grid-compact-min-width:', getComputedStyle(document.documentElement).getPropertyValue('--grid-compact-min-width'));
+    </script>
+</body>
+</html>

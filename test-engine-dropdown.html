@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>搜索引擎下拉列表测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .test-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .test-steps {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #dc3545;
+        }
+        .test-steps ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .test-steps li {
+            margin-bottom: 8px;
+            color: #333;
+        }
+        .console-output {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin: 15px 0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .debug-cmd {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin: 15px 0;
+            border-left: 4px solid #ffc107;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        .status.critical {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .simple-dropdown {
+            position: relative;
+            display: inline-block;
+            margin: 20px 0;
+        }
+        .simple-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .simple-button:hover {
+            background: #0056b3;
+        }
+        .simple-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 9999;
+            min-width: 150px;
+            margin-top: 4px;
+        }
+        .simple-option {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+        .simple-option:last-child {
+            border-bottom: none;
+        }
+        .simple-option:hover {
+            background: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 搜索引擎下拉列表专项测试</h1>
+        
+        <div class="test-section">
+            <div class="test-title">
+                问题诊断: 引擎下拉列表不可用 
+                <span class="status critical">🚨 需修复</span>
+            </div>
+            <div class="test-steps">
+                <strong>问题现象：</strong>
+                <ol>
+                    <li>点击搜索引擎图标（"百"）没有反应</li>
+                    <li>下拉菜单不显示</li>
+                    <li>无法切换搜索引擎</li>
+                    <li>可能的原因：CSS层级、事件冲突、元素被遮挡</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">
+                1. 简单下拉菜单测试
+            </div>
+            <p>先测试一个简单的下拉菜单是否工作：</p>
+            
+            <div class="simple-dropdown">
+                <button class="simple-button" onclick="toggleSimpleMenu()">
+                    测试下拉菜单 ▼
+                </button>
+                <div id="simpleMenu" class="simple-menu" style="display: none;">
+                    <div class="simple-option" onclick="selectOption('选项1')">选项1</div>
+                    <div class="simple-option" onclick="selectOption('选项2')">选项2</div>
+                    <div class="simple-option" onclick="selectOption('选项3')">选项3</div>
+                </div>
+            </div>
+            
+            <p id="selectedOption">选择的选项: 无</p>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">
+                2. 前端应用检查步骤
+            </div>
+            <div class="test-steps">
+                <strong>详细检查步骤：</strong>
+                <ol>
+                    <li>访问: <strong>http://localhost:3001</strong></li>
+                    <li>打开开发者工具 (F12)</li>
+                    <li>切换到 Console 标签页</li>
+                    <li>找到搜索栏左侧的搜索引擎图标</li>
+                    <li>右键点击图标 → "检查元素"</li>
+                    <li>在Elements标签页中查看HTML结构</li>
+                    <li>检查是否有CSS样式冲突</li>
+                </ol>
+            </div>
+            
+            <div class="console-output">
+预期看到的HTML结构:
+&lt;div class="search-engine-selector"&gt;
+  &lt;div class="engine-button"&gt;
+    &lt;span class="engine-icon"&gt;百&lt;/span&gt;
+    &lt;svg class="dropdown-arrow"&gt;...&lt;/svg&gt;
+  &lt;/div&gt;
+  &lt;div class="engine-dropdown" style="z-index: 9999;"&gt;
+    &lt;div class="engine-option"&gt;百度&lt;/div&gt;
+    &lt;div class="engine-option"&gt;Google&lt;/div&gt;
+    ...
+  &lt;/div&gt;
+&lt;/div&gt;
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">
+                3. 调试命令
+            </div>
+            <div class="debug-cmd">
+<strong>在浏览器控制台运行以下命令：</strong>
+
+// 1. 检查搜索引擎按钮是否存在
+const engineBtn = document.querySelector('.engine-button');
+console.log('搜索引擎按钮:', engineBtn);
+
+// 2. 检查按钮的样式
+if (engineBtn) {
+    const styles = window.getComputedStyle(engineBtn);
+    console.log('按钮样式:', {
+        display: styles.display,
+        pointerEvents: styles.pointerEvents,
+        zIndex: styles.zIndex,
+        position: styles.position
+    });
+}
+
+// 3. 手动触发点击事件
+if (engineBtn) {
+    console.log('手动点击搜索引擎按钮...');
+    engineBtn.click();
+    
+    // 检查下拉菜单是否显示
+    setTimeout(() => {
+        const dropdown = document.querySelector('.engine-dropdown');
+        console.log('下拉菜单:', dropdown);
+        if (dropdown) {
+            console.log('下拉菜单样式:', window.getComputedStyle(dropdown).display);
+        }
+    }, 100);
+}
+
+// 4. 检查事件监听器
+if (engineBtn) {
+    console.log('点击事件:', engineBtn.onclick);
+    console.log('鼠标按下事件:', engineBtn.onmousedown);
+}
+
+// 5. 强制显示下拉菜单
+const dropdown = document.querySelector('.engine-dropdown');
+if (dropdown) {
+    dropdown.style.display = 'block';
+    dropdown.style.visibility = 'visible';
+    dropdown.style.zIndex = '99999';
+    console.log('强制显示下拉菜单');
+}
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">
+                4. 可能的解决方案
+            </div>
+            <div class="test-steps">
+                <strong>如果下拉菜单仍然不工作，尝试：</strong>
+                <ol>
+                    <li><strong>检查CSS冲突</strong>: 其他CSS可能覆盖了样式</li>
+                    <li><strong>检查JavaScript错误</strong>: 控制台是否有错误阻止执行</li>
+                    <li><strong>检查元素层级</strong>: 其他元素可能遮挡了按钮</li>
+                    <li><strong>检查React状态</strong>: showEngineSelector状态是否正确更新</li>
+                    <li><strong>简化实现</strong>: 使用更简单的HTML结构</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">
+                5. 预期修复结果
+            </div>
+            <div class="console-output">
+修复后应该看到的控制台输出:
+🔍 鼠标按下搜索引擎按钮, 当前状态: false
+🔍 点击搜索引擎按钮, 当前状态: false
+🔍 鼠标按下搜索引擎选项: Google
+🔍 点击搜索引擎选项: Google
+🔍 切换搜索引擎: Google
+
+页面行为:
+- 点击"百"图标显示下拉菜单
+- 菜单包含6个搜索引擎选项
+- 点击选项后图标更新
+- 占位符文本相应更新
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log('🔧 搜索引擎下拉列表测试页面已加载');
+        
+        let simpleMenuVisible = false;
+        
+        function toggleSimpleMenu() {
+            const menu = document.getElementById('simpleMenu');
+            simpleMenuVisible = !simpleMenuVisible;
+            menu.style.display = simpleMenuVisible ? 'block' : 'none';
+            console.log('简单下拉菜单状态:', simpleMenuVisible);
+        }
+        
+        function selectOption(option) {
+            document.getElementById('selectedOption').textContent = '选择的选项: ' + option;
+            document.getElementById('simpleMenu').style.display = 'none';
+            simpleMenuVisible = false;
+            console.log('选择了选项:', option);
+        }
+        
+        // 点击外部关闭菜单
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.simple-dropdown')) {
+                document.getElementById('simpleMenu').style.display = 'none';
+                simpleMenuVisible = false;
+            }
+        });
+        
+        console.log('简单下拉菜单功能已初始化');
+    </script>
+</body>
+</html>
