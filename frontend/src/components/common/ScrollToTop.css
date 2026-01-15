@@ -1,0 +1,92 @@
+.scroll-to-top {
+  position: fixed;
+  right: 2rem;
+  bottom: 2rem;
+  width: 48px;
+  height: 48px;
+  background: white;
+  border: none;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #334155;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(20px);
+  transition: all 0.3s ease;
+  z-index: 160;
+}
+
+.scroll-to-top.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.scroll-to-top:hover {
+  background: #f1f5f9;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.scroll-to-top:active {
+  transform: translateY(0);
+}
+
+.scroll-to-top svg {
+  transition: transform 0.2s ease;
+}
+
+.scroll-to-top:hover svg {
+  transform: translateY(-2px);
+}
+
+/* Transparent Mode */
+body.transparent-mode .scroll-to-top {
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(20px);
+}
+
+body.transparent-mode .scroll-to-top:hover {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+/* Dark Mode */
+body.theme-dark .scroll-to-top {
+  background: #1e293b;
+  color: #e2e8f0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+body.theme-dark .scroll-to-top:hover {
+  background: #334155;
+}
+
+body.theme-dark.transparent-mode .scroll-to-top {
+  background: rgba(30, 41, 59, 0.4);
+  backdrop-filter: blur(20px);
+}
+
+body.theme-dark.transparent-mode .scroll-to-top:hover {
+  background: rgba(30, 41, 59, 0.6);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .scroll-to-top {
+    right: 1rem;
+    bottom: 1rem;
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* 避免与侧边栏重叠 */
+@media (min-width: 1025px) {
+  .scroll-to-top {
+    right: 2rem;
+  }
+}

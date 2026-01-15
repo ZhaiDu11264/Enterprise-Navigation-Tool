@@ -1,9 +1,14 @@
 import { Router, Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
+import os from 'os';
+import { executeQuery } from '../config/database';
 import { UserService } from '../models/User';
+import { AuditLogService } from '../models/AuditLog';
+import { NotificationService, NotificationLevel } from '../models/Notification';
 import { ConfigurationService } from '../models/DefaultConfiguration';
 import { authenticateToken, requireAdmin } from '../middleware/auth';
 import { syncConfigurationToAllUsers } from '../utils/defaultConfiguration';
+import { logAudit } from '../utils/audit';
 
 const router = Router();
 
@@ -180,6 +185,14 @@ router.post('/users', [
       role
     });
 
+    await logAudit(req, {
+      userId: req.user!.userId,
+      action: 'admin.user.create',
+      entityType: 'user',
+      entityId: newUser.id,
+      description: `Created user "${newUser.username}"`
+    });
+
     res.status(201).json({
       success: true,
       data: {
@@ -294,6 +307,14 @@ router.put('/users/:id', [
     // Update user
     const updatedUser = await UserService.updateUser(userId, req.body);
 
+    await logAudit(req, {
+      userId: req.user!.userId,
+      action: 'admin.user.update',
+      entityType: 'user',
+      entityId: updatedUser.id,
+      description: `Updated user "${updatedUser.username}"`
+    });
+
     res.status(200).json({
       success: true,
       data: {
@@ -325,6 +346,162 @@ router.put('/users/:id', [
 });
 
 /**
+ * POST /api/admin/users/:id/reset-password
+ * Reset user password (admin only)
+ */
+router.post('/users/:id/reset-password', [
+  body('password')
+    .optional()
+    .isLength({ min: 6 })
+    .withMessage('Password must be at least 6 characters')
+], async (req: Request, res: Response): Promise<void> => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(400).json({
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid input data',
+          details: errors.array(),
+          timestamp: new Date().toISOString(),
+          requestId: req.headers['x-request-id'] || 'unknown'
+        }
+      });
+      return;
+    }
+
+    const userId = parseInt(req.params.id!, 10);
+    if (isNaN(userId)) {
+      res.status(400).json({
+        error: {
+          code: 'INVALID_USER_ID',
+          message: 'Invalid user ID',
+          timestamp: new Date().toISOString(),
+          requestId: req.headers['x-request-id'] || 'unknown'
+        }
+      });
+      return;
+    }
+
+    const user = await UserService.getUserById(userId);
+    if (!user) {
+      res.status(404).json({
+        error: {
+          code: 'USER_NOT_FOUND',
+          message: 'User not found',
+          timestamp: new Date().toISOString(),
+          requestId: req.headers['x-request-id'] || 'unknown'
+        }
+      });
+      return;
+    }
+
+    const providedPassword = req.body.password;
+    const newPassword = providedPassword || Math.random().toString(36).slice(-10);
+    await UserService.updatePassword(userId, newPassword);
+
+    await logAudit(req, {
+      userId: req.user!.userId,
+      action: 'admin.user.reset_password',
+      entityType: 'user',
+      entityId: userId,
+      description: `Reset password for user "${user.username}"`
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        userId,
+        temporaryPassword: providedPassword ? undefined : newPassword
+      },
+      message: 'Password reset successfully',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Failed to reset password',
+        timestamp: new Date().toISOString(),
+        requestId: req.headers['x-request-id'] || 'unknown'
+      }
+    });
+  }
+});
+
+/**
+ * POST /api/admin/users/:id/reset-profile
+ * Reset user profile fields (admin only)
+ */
+router.post('/users/:id/reset-profile', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = parseInt(req.params.id!, 10);
+    if (isNaN(userId)) {
+      res.status(400).json({
+        error: {
+          code: 'INVALID_USER_ID',
+          message: 'Invalid user ID',
+          timestamp: new Date().toISOString(),
+          requestId: req.headers['x-request-id'] || 'unknown'
+        }
+      });
+      return;
+    }
+
+    const user = await UserService.getUserById(userId);
+    if (!user) {
+      res.status(404).json({
+        error: {
+          code: 'USER_NOT_FOUND',
+          message: 'User not found',
+          timestamp: new Date().toISOString(),
+          requestId: req.headers['x-request-id'] || 'unknown'
+        }
+      });
+      return;
+    }
+
+    const updatedUser = await UserService.updateUser(userId, {
+      displayName: user.username,
+      avatarUrl: null
+    });
+
+    await logAudit(req, {
+      userId: req.user!.userId,
+      action: 'admin.user.reset_profile',
+      entityType: 'user',
+      entityId: userId,
+      description: `Reset profile for user "${user.username}"`
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        user: {
+          id: updatedUser.id,
+          username: updatedUser.username,
+          displayName: updatedUser.displayName,
+          avatarUrl: updatedUser.avatarUrl
+        }
+      },
+      message: 'User profile reset successfully',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Reset profile error:', error);
+    res.status(500).json({
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Failed to reset profile',
+        timestamp: new Date().toISOString(),
+        requestId: req.headers['x-request-id'] || 'unknown'
+      }
+    });
+  }
+});
+
+/**
  * DELETE /api/admin/users/:id
  * Deactivate user (admin only)
  */
@@ -343,12 +520,12 @@ router.delete('/users/:id', async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    // Prevent admin from deleting themselves
+    // Prevent admin from banning themselves
     if (req.user?.userId === userId) {
       res.status(400).json({
         error: {
           code: 'CANNOT_DELETE_SELF',
-          message: 'Cannot delete your own account',
+          message: 'Cannot ban your own account',
           timestamp: new Date().toISOString(),
           requestId: req.headers['x-request-id'] || 'unknown'
         }
@@ -373,9 +550,17 @@ router.delete('/users/:id', async (req: Request, res: Response): Promise<void> =
     // Soft delete user
     await UserService.deleteUser(userId);
 
+    await logAudit(req, {
+      userId: req.user!.userId,
+      action: 'admin.user.ban',
+      entityType: 'user',
+      entityId: userId,
+      description: `Banned user "${existingUser.username}"`
+    });
+
     res.status(200).json({
       success: true,
-      message: 'User deactivated successfully',
+      message: 'User banned successfully',
       timestamp: new Date().toISOString()
     });
 
@@ -384,7 +569,7 @@ router.delete('/users/:id', async (req: Request, res: Response): Promise<void> =
     res.status(500).json({
       error: {
         code: 'INTERNAL_ERROR',
-        message: 'Failed to deactivate user',
+        message: 'Failed to ban user',
         timestamp: new Date().toISOString(),
         requestId: req.headers['x-request-id'] || 'unknown'
       }
@@ -399,6 +584,28 @@ router.delete('/users/:id', async (req: Request, res: Response): Promise<void> =
 router.get('/stats', async (req: Request, res: Response): Promise<void> => {
   try {
     const users = await UserService.getAllUsers();
+    const memory = process.memoryUsage();
+    const linkRows = await executeQuery<{ url: string; access_count: number }>(
+      'SELECT url, access_count FROM website_links WHERE is_active = true AND access_count > 0'
+    );
+    const domainAccess: Record<string, number> = {};
+    linkRows.forEach((row) => {
+      const urlValue = row.url || '';
+      let hostname = '';
+      try {
+        hostname = new URL(urlValue).hostname.replace(/^www\./i, '');
+      } catch {
+        hostname = urlValue.trim();
+      }
+      if (!hostname) {
+        return;
+      }
+      domainAccess[hostname] = (domainAccess[hostname] || 0) + (row.access_count || 0);
+    });
+    const topDomains = Object.entries(domainAccess)
+      .map(([host, totalAccess]) => ({ host, totalAccess }))
+      .sort((a, b) => b.totalAccess - a.totalAccess)
+      .slice(0, 10);
     
     const stats = {
       totalUsers: users.length,
@@ -410,7 +617,21 @@ router.get('/stats', async (req: Request, res: Response): Promise<void> => {
         const dayAgo = new Date();
         dayAgo.setDate(dayAgo.getDate() - 1);
         return user.lastLoginAt > dayAgo;
-      }).length
+      }).length,
+      topDomains,
+      resources: {
+        uptimeSeconds: Math.round(process.uptime()),
+        memory: {
+          rssMb: Math.round(memory.rss / 1024 / 1024),
+          heapUsedMb: Math.round(memory.heapUsed / 1024 / 1024),
+          heapTotalMb: Math.round(memory.heapTotal / 1024 / 1024)
+        },
+        system: {
+          loadAverage: os.loadavg(),
+          totalMemMb: Math.round(os.totalmem() / 1024 / 1024),
+          freeMemMb: Math.round(os.freemem() / 1024 / 1024)
+        }
+      }
     };
 
     res.status(200).json({
@@ -425,6 +646,198 @@ router.get('/stats', async (req: Request, res: Response): Promise<void> => {
       error: {
         code: 'INTERNAL_ERROR',
         message: 'Failed to retrieve statistics',
+        timestamp: new Date().toISOString(),
+        requestId: req.headers['x-request-id'] || 'unknown'
+      }
+    });
+  }
+});
+
+/**
+ * GET /api/admin/logs
+ * Query audit logs (admin only)
+ */
+router.get('/logs', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { userId, action, entityType, keyword, from, to, limit, offset } = req.query;
+    const parsedUserId = typeof userId === 'string' ? Number(userId) : undefined;
+    const parsedLimit = typeof limit === 'string' ? Number(limit) : 50;
+    const parsedOffset = typeof offset === 'string' ? Number(offset) : 0;
+
+    const query: {
+      userId?: number;
+      action?: string;
+      entityType?: string;
+      keyword?: string;
+      from?: string;
+      to?: string;
+      limit?: number;
+      offset?: number;
+    } = {};
+
+    if (typeof parsedUserId === 'number' && Number.isFinite(parsedUserId)) {
+      query.userId = parsedUserId;
+    }
+    if (typeof action === 'string') {
+      query.action = action;
+    }
+    if (typeof entityType === 'string') {
+      query.entityType = entityType;
+    }
+    if (typeof keyword === 'string') {
+      query.keyword = keyword;
+    }
+    if (typeof from === 'string') {
+      query.from = from;
+    }
+    if (typeof to === 'string') {
+      query.to = to;
+    }
+    if (Number.isFinite(parsedLimit)) {
+      query.limit = parsedLimit;
+    }
+    if (Number.isFinite(parsedOffset)) {
+      query.offset = parsedOffset;
+    }
+
+    const result = await AuditLogService.queryLogs(query);
+
+    res.status(200).json({
+      success: true,
+      data: result,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Admin logs error:', error);
+    res.status(500).json({
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Failed to retrieve audit logs',
+        timestamp: new Date().toISOString(),
+        requestId: req.headers['x-request-id'] || 'unknown'
+      }
+    });
+  }
+});
+
+/**
+ * POST /api/admin/notifications
+ * Send notification to all users or specific users (admin only)
+ */
+router.post('/notifications', [
+  body('title')
+    .trim()
+    .notEmpty()
+    .isLength({ min: 1, max: 200 })
+    .withMessage('Title must be between 1 and 200 characters'),
+  body('message')
+    .trim()
+    .notEmpty()
+    .isLength({ min: 1, max: 2000 })
+    .withMessage('Message must be between 1 and 2000 characters'),
+  body('level')
+    .optional()
+    .isIn(['info', 'success', 'warning', 'error'])
+    .withMessage('Level must be one of info, success, warning, error'),
+  body('userIds')
+    .optional()
+    .isArray()
+    .withMessage('userIds must be an array'),
+  body('userIds.*')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Each userId must be a positive integer')
+], async (req: Request, res: Response): Promise<void> => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(400).json({
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid input data',
+          details: errors.array(),
+          timestamp: new Date().toISOString(),
+          requestId: req.headers['x-request-id'] || 'unknown'
+        }
+      });
+      return;
+    }
+
+    const { title, message, level = 'info', userIds } = req.body as {
+      title: string;
+      message: string;
+      level?: NotificationLevel;
+      userIds?: number[];
+    };
+
+    let targetUserIds: number[] = [];
+    if (Array.isArray(userIds) && userIds.length > 0) {
+      targetUserIds = userIds.map((id) => Number(id)).filter((id) => Number.isFinite(id));
+    } else {
+      const users = await UserService.getAllUsers();
+      targetUserIds = users.filter(user => user.isActive).map(user => user.id);
+    }
+
+    const notification = await NotificationService.createNotification(
+      req.user?.userId ?? null,
+      title,
+      message,
+      level,
+      targetUserIds
+    );
+
+    await logAudit(req, {
+      userId: req.user!.userId,
+      action: 'admin.notification.send',
+      entityType: 'notification',
+      entityId: notification.id,
+      description: `Sent notification "${notification.title}" to ${targetUserIds.length} users`
+    });
+
+    res.status(201).json({
+      success: true,
+      data: {
+        notification,
+        recipients: targetUserIds.length
+      },
+      message: 'Notification sent successfully',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Send notification error:', error);
+    res.status(500).json({
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Failed to send notification',
+        timestamp: new Date().toISOString(),
+        requestId: req.headers['x-request-id'] || 'unknown'
+      }
+    });
+  }
+});
+
+/**
+ * GET /api/admin/notifications
+ * List recent notifications (admin only)
+ */
+router.get('/notifications', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const limit = req.query.limit ? Number(req.query.limit) : 50;
+    const notifications = await NotificationService.listAdminNotifications(
+      Number.isFinite(limit) ? limit : 50
+    );
+
+    res.status(200).json({
+      success: true,
+      data: { notifications },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('List notifications error:', error);
+    res.status(500).json({
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Failed to list notifications',
         timestamp: new Date().toISOString(),
         requestId: req.headers['x-request-id'] || 'unknown'
       }
@@ -634,6 +1047,14 @@ router.post('/config', [
       createdBy
     );
 
+    await logAudit(req, {
+      userId: req.user!.userId,
+      action: 'admin.config.create',
+      entityType: 'configuration',
+      entityId: newConfig.id,
+      description: `Created configuration "${newConfig.name}"`
+    });
+
     res.status(201).json({
       success: true,
       data: { configuration: newConfig },
@@ -744,6 +1165,14 @@ router.put('/config/:id', [
       configData || existingConfig.configData
     );
 
+    await logAudit(req, {
+      userId: req.user!.userId,
+      action: 'admin.config.update',
+      entityType: 'configuration',
+      entityId: updatedConfig.id,
+      description: `Updated configuration "${updatedConfig.name}"`
+    });
+
     res.status(200).json({
       success: true,
       data: { configuration: updatedConfig },
@@ -801,6 +1230,14 @@ router.post('/config/:id/activate', async (req: Request, res: Response): Promise
     await ConfigurationService.activateConfiguration(configId);
     await syncConfigurationToAllUsers(configId, 'merge');
 
+    await logAudit(req, {
+      userId: req.user!.userId,
+      action: 'admin.config.activate',
+      entityType: 'configuration',
+      entityId: configId,
+      description: `Activated configuration "${configuration.name}"`
+    });
+
     res.status(200).json({
       success: true,
       message: 'Configuration activated successfully',
@@ -841,6 +1278,14 @@ router.delete('/config/:id', async (req: Request, res: Response): Promise<void> 
 
     // Delete configuration
     await ConfigurationService.deleteConfiguration(configId);
+
+    await logAudit(req, {
+      userId: req.user!.userId,
+      action: 'admin.config.delete',
+      entityType: 'configuration',
+      entityId: configId,
+      description: 'Deleted configuration'
+    });
 
     res.status(200).json({
       success: true,
@@ -955,6 +1400,14 @@ router.post('/config/from-user/:userId', [
       description || '',
       createdBy
     );
+
+    await logAudit(req, {
+      userId: req.user!.userId,
+      action: 'admin.config.create_from_user',
+      entityType: 'configuration',
+      entityId: newConfig.id,
+      description: `Created configuration from user "${user.username}"`
+    });
 
     res.status(201).json({
       success: true,
@@ -1140,6 +1593,14 @@ router.post('/config/publish', [
     const successCount = results.filter(r => r.success).length;
     const failureCount = results.filter(r => !r.success).length;
 
+    await logAudit(req, {
+      userId: req.user!.userId,
+      action: 'admin.config.publish',
+      entityType: 'configuration',
+      entityId: configId,
+      description: `Published configuration to ${successCount} users`
+    });
+
     res.status(200).json({
       success: true,
       data: {
@@ -1261,6 +1722,14 @@ router.post('/users/:id/reset', [
     // Apply configuration to user
     await ConfigurationService.applyToUser(userId, targetConfigId, strategy);
 
+    await logAudit(req, {
+      userId: req.user!.userId,
+      action: 'admin.user.reset_config',
+      entityType: 'user',
+      entityId: userId,
+      description: `Reset configuration for user "${user.username}"`
+    });
+
     res.status(200).json({
       success: true,
       data: {
@@ -1376,6 +1845,14 @@ router.post('/users/:id/sync', [
 
     // Apply configuration to user with merge strategy
     await ConfigurationService.applyToUser(userId, targetConfigId, 'merge');
+
+    await logAudit(req, {
+      userId: req.user!.userId,
+      action: 'admin.user.sync_config',
+      entityType: 'user',
+      entityId: userId,
+      description: `Synced configuration for user "${user.username}"`
+    });
 
     res.status(200).json({
       success: true,

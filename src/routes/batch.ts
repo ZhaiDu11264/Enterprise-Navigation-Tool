@@ -3,6 +3,7 @@ import { body, query, validationResult } from 'express-validator';
 import { authenticateToken } from '../middleware/auth';
 import { LinkService } from '../models/WebsiteLink';
 import { ExportService } from '../services/exportService';
+import { logAudit } from '../utils/audit';
 
 const router = Router();
 
@@ -41,6 +42,12 @@ router.post('/links/delete',
           errors_list.push(`Failed to delete link ${linkId}: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
       }
+
+      await logAudit(req, {
+        userId,
+        action: 'batch.links.delete',
+        description: `Batch deleted ${successCount} links`
+      });
 
       return res.status(200).json({
         message: 'Batch delete completed',
@@ -99,6 +106,12 @@ router.post('/links/move',
           errors_list.push(`Failed to move link ${linkId}: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
       }
+
+      await logAudit(req, {
+        userId,
+        action: 'batch.links.move',
+        description: `Batch moved ${successCount} links to group ${targetGroupId}`
+      });
 
       return res.status(200).json({
         message: 'Batch move completed',
@@ -174,6 +187,12 @@ router.post('/links/edit',
         }
       }
 
+      await logAudit(req, {
+        userId,
+        action: 'batch.links.edit',
+        description: `Batch edited ${successCount} links`
+      });
+
       return res.status(200).json({
         message: 'Batch edit completed',
         data: {
@@ -231,6 +250,12 @@ router.post('/links/favorite',
           errors_list.push(`Failed to update favorite status for link ${linkId}: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
       }
+
+      await logAudit(req, {
+        userId,
+        action: 'batch.links.favorite',
+        description: `Batch updated favorite for ${successCount} links`
+      });
 
       return res.status(200).json({
         message: 'Batch favorite update completed',
@@ -390,6 +415,12 @@ router.post('/export',
         const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
         res.send(buffer);
       }
+
+      await logAudit(req, {
+        userId,
+        action: 'batch.export',
+        description: `Batch exported ${linkIds.length} links as ${format}`
+      });
 
     } catch (error) {
       console.error('Batch export error:', error);

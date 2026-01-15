@@ -1,0 +1,143 @@
+/* Draggable List */
+.draggable-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.draggable-list-item {
+  background: white;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  position: relative;
+  cursor: move;
+}
+
+.draggable-list-item.add-link-item {
+  cursor: default;
+}
+
+/* 在 DraggableList 中的添加链接按钮应该是长条形 */
+.draggable-list-item.add-link-item .add-link-card {
+  display: flex !important;
+  width: 100% !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  min-height: auto !important;
+  padding: calc(1rem * var(--padding-scale, 1)) calc(1.5rem * var(--padding-scale, 1)) !important;
+  gap: calc(1rem * var(--padding-scale, 1)) !important;
+  box-sizing: border-box !important;
+}
+
+.draggable-list-item.add-link-item .add-link-card.compact {
+  padding: calc(0.75rem * var(--padding-scale, 1)) calc(1rem * var(--padding-scale, 1)) !important;
+}
+
+.draggable-list-item.add-link-item .add-link-icon {
+  margin: 0 !important;
+  width: calc(40px * var(--icon-scale, 1)) !important;
+  height: calc(40px * var(--icon-scale, 1)) !important;
+}
+
+.draggable-list-item.add-link-item .add-link-card.compact .add-link-icon {
+  width: calc(44px * var(--icon-scale, 1)) !important;
+  height: calc(44px * var(--icon-scale, 1)) !important;
+}
+
+.draggable-list-item.add-link-item .add-link-content {
+  text-align: left !important;
+  gap: 0.25rem !important;
+}
+
+.draggable-list-item.add-link-item .add-link-text {
+  font-size: calc(1rem * var(--text-scale, 1)) !important;
+}
+
+.draggable-list-item.add-link-item .add-link-hint {
+  font-size: calc(0.85rem * var(--text-scale, 1)) !important;
+}
+
+.draggable-list-item.dragging {
+  opacity: 0.5;
+  transform: scale(0.98);
+}
+
+.draggable-list-item.drag-over {
+  border-top: 2px solid #4285f4;
+  margin-top: 4px;
+}
+
+/* Dark mode support */
+body.theme-dark .draggable-list-item {
+  background: #1e293b;
+}
+
+body.theme-dark .draggable-list-item.drag-over {
+  border-top-color: #60a5fa;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .draggable-list {
+    gap: 6px;
+  }
+}
+
+
+/* Unified Draggable List Styles */
+.unified-draggable-list {
+  width: 100%;
+}
+
+.unified-list-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.grouped-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.grouped-section-body {
+  overflow: hidden;
+  max-height: 3000px;
+  opacity: 1;
+  transform: translateY(0);
+  transition: max-height 0.28s ease, opacity 0.2s ease, transform 0.2s ease;
+}
+
+.grouped-section-body.collapsed {
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+}
+
+.grouped-section-body.grid-layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--grid-min-width, 280px), 1fr));
+  gap: 16px;
+  padding: 16px 0;
+}
+
+.grouped-section-body.list-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.grouped-section-body.grid-layout .draggable-list-item.grid-item {
+  width: 100%;
+  height: auto;
+}
+
+/* Compact mode for grid */
+.unified-draggable-list.grid-mode .grouped-section-body.grid-layout {
+  grid-template-columns: repeat(auto-fill, minmax(var(--grid-compact-min-width, 200px), 1fr));
+  gap: 12px;
+}

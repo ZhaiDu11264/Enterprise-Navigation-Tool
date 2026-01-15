@@ -3,7 +3,8 @@ import { body, validationResult } from 'express-validator';
 import { UserService } from '../models/User';
 import { ConfigurationService } from '../models/DefaultConfiguration';
 import { JWTService } from '../utils/jwt';
-import { authenticateToken, optionalAuth } from '../middleware/auth';
+import { authenticateToken } from '../middleware/auth';
+import { logAudit } from '../utils/audit';
 
 const router = Router();
 
@@ -73,12 +74,22 @@ router.post('/login', [
     }
 
     // Return success response
+    await logAudit(req, {
+      userId: authResult.user.id,
+      action: 'auth.login',
+      entityType: 'user',
+      entityId: authResult.user.id,
+      description: `User "${authResult.user.username}" logged in`
+    });
+
     res.status(200).json({
       success: true,
       data: {
         user: {
           id: authResult.user.id,
           username: authResult.user.username,
+          displayName: authResult.user.displayName,
+          avatarUrl: authResult.user.avatarUrl,
           email: authResult.user.email,
           role: authResult.user.role,
           createdAt: authResult.user.createdAt,
@@ -113,6 +124,16 @@ router.post('/logout', authenticateToken, async (req: Request, res: Response): P
     // The client should remove the token from storage
     // Here we just confirm the logout action
     
+    if (req.user) {
+      await logAudit(req, {
+        userId: req.user.userId,
+        action: 'auth.logout',
+        entityType: 'user',
+        entityId: req.user.userId,
+        description: `User "${req.user.username}" logged out`
+      });
+    }
+
     res.status(200).json({
       success: true,
       message: 'Logged out successfully',
@@ -171,6 +192,8 @@ router.get('/me', authenticateToken, async (req: Request, res: Response): Promis
         user: {
           id: user.id,
           username: user.username,
+          displayName: user.displayName,
+          avatarUrl: user.avatarUrl,
           email: user.email,
           role: user.role,
           createdAt: user.createdAt,
@@ -343,6 +366,14 @@ router.post('/register', [
       console.warn('Failed to apply default configuration to new user:', configError);
       // Don't fail user creation if default config application fails
     }
+
+    await logAudit(req, {
+      userId: newUser.id,
+      action: 'auth.register',
+      entityType: 'user',
+      entityId: newUser.id,
+      description: `User "${newUser.username}" registered`
+    });
 
     res.status(201).json({
       success: true,

@@ -10,7 +10,7 @@ router.use(authenticateToken);
 // Search links endpoint
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.userId;
     const { q: query, limit } = req.query;
 
     // Validate search query
@@ -90,7 +90,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 // Get recent links endpoint
 router.get('/recent', async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.userId;
     const { limit } = req.query;
 
     // Parse limit parameter
@@ -126,7 +126,7 @@ router.get('/recent', async (req: Request, res: Response): Promise<void> => {
 // Get favorite links endpoint
 router.get('/favorites', async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.userId;
 
     const favoriteLinks = await LinkService.getFavoriteLinks(userId);
 

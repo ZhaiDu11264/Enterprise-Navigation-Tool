@@ -3,6 +3,7 @@ import { body, param, query, validationResult } from 'express-validator';
 import { authenticateToken } from '../middleware/auth';
 import { LinkService } from '../models/WebsiteLink';
 import { ConfigurationService } from '../models/DefaultConfiguration';
+import { logAudit } from '../utils/audit';
 
 const router = Router();
 
@@ -123,6 +124,14 @@ router.post('/', [
       iconUrl,
       groupId: parseInt(groupId, 10),
       sortOrder
+    });
+
+    await logAudit(req, {
+      userId: req.user.userId,
+      action: 'link.create',
+      entityType: 'link',
+      entityId: link.id,
+      description: `Created link "${link.name}"`
     });
 
     res.status(201).json({
@@ -257,6 +266,14 @@ router.put('/:id', [
 
     const link = await LinkService.updateLink(linkId, req.user.userId, updates);
 
+    await logAudit(req, {
+      userId: req.user.userId,
+      action: 'link.update',
+      entityType: 'link',
+      entityId: link.id,
+      description: `Updated link "${link.name}"`
+    });
+
     res.status(200).json({
       success: true,
       data: { link },
@@ -318,6 +335,14 @@ router.delete('/:id', [
     const linkId = parseInt(req.params.id!, 10);
     const allowSystemDelete = req.user.role === 'admin';
     await LinkService.deleteLink(linkId, req.user.userId, allowSystemDelete);
+
+    await logAudit(req, {
+      userId: req.user.userId,
+      action: 'link.delete',
+      entityType: 'link',
+      entityId: linkId,
+      description: 'Deleted link'
+    });
 
     res.status(200).json({
       success: true,

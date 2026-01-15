@@ -1,0 +1,222 @@
+.config-update-notification {
+  position: fixed;
+  z-index: 9999;
+  max-width: 400px;
+  min-width: 320px;
+  animation: slideIn 0.3s ease-out;
+}
+
+.config-update-notification.top-right {
+  top: 20px;
+  right: 20px;
+}
+
+.config-update-notification.top-left {
+  top: 20px;
+  left: 20px;
+}
+
+.config-update-notification.bottom-right {
+  bottom: 20px;
+  right: 20px;
+}
+
+.config-update-notification.bottom-left {
+  bottom: 20px;
+  left: 20px;
+}
+
+.notification-content {
+  background: #ffffff;
+  border: 1px solid #e1e5e9;
+  border-left: 4px solid #007bff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 16px;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.notification-icon {
+  color: #007bff;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.notification-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #1a1a1a;
+  margin-bottom: 4px;
+}
+
+.notification-message {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+.notification-time {
+  font-size: 11px;
+  color: #999;
+  margin-bottom: 12px;
+}
+
+.notification-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.apply-button {
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.apply-button:hover:not(:disabled) {
+  background: #0056b3;
+}
+
+.apply-button:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+
+.dismiss-button {
+  background: transparent;
+  color: #666;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dismiss-button:hover:not(:disabled) {
+  background: #f8f9fa;
+  border-color: #adb5bd;
+}
+
+.dismiss-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.close-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #999;
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.close-button:hover:not(:disabled) {
+  background: #f8f9fa;
+  color: #666;
+}
+
+.close-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .notification-content {
+    background: #2d3748;
+    border-color: #4a5568;
+    color: #e2e8f0;
+  }
+  
+  .notification-title {
+    color: #f7fafc;
+  }
+  
+  .notification-message {
+    color: #cbd5e0;
+  }
+  
+  .notification-time {
+    color: #a0aec0;
+  }
+  
+  .dismiss-button {
+    color: #cbd5e0;
+    border-color: #4a5568;
+  }
+  
+  .dismiss-button:hover:not(:disabled) {
+    background: #4a5568;
+    border-color: #718096;
+  }
+  
+  .close-button {
+    color: #a0aec0;
+  }
+  
+  .close-button:hover:not(:disabled) {
+    background: #4a5568;
+    color: #cbd5e0;
+  }
+}
+
+/* Mobile responsive */
+@media (max-width: 480px) {
+  .config-update-notification {
+    left: 10px !important;
+    right: 10px !important;
+    max-width: none;
+    min-width: auto;
+  }
+  
+  .notification-content {
+    padding: 12px;
+  }
+  
+  .notification-actions {
+    flex-direction: column;
+  }
+  
+  .apply-button,
+  .dismiss-button {
+    width: 100%;
+    justify-content: center;
+  }
+}

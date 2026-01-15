@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { ConfigurationService } from '../models/DefaultConfiguration';
 import { authenticateToken } from '../middleware/auth';
+import { logAudit } from '../utils/audit';
 
 const router = Router();
 
@@ -78,6 +79,14 @@ router.post('/refresh', async (req: Request, res: Response): Promise<void> => {
 
     // Apply active configuration to user with merge strategy
     await ConfigurationService.applyToUser(userId, activeConfig.id, 'merge');
+
+    await logAudit(req, {
+      userId,
+      action: 'config.refresh',
+      entityType: 'configuration',
+      entityId: activeConfig.id,
+      description: `Refreshed configuration "${activeConfig.name}"`
+    });
 
     res.status(200).json({
       success: true,
