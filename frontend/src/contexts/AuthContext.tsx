@@ -110,20 +110,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const isAuthenticated = authService.isAuthenticated();
 
       if (user && isAuthenticated) {
-        // Check if this is a different user than the current state
-        if (state.user && state.user.id !== user.id) {
-          // Different user detected, clear caches before setting new user
-          try {
-            import('../utils/cache').then(({ cache, persistentCache }) => {
-              cache.clear();
-              persistentCache.clear();
-            }).catch(err => {
-              console.warn('Failed to clear caches on user change:', err);
-            });
-          } catch (error) {
-            console.warn('Failed to import cache modules on user change:', error);
-          }
-        }
         dispatch({ type: 'SET_USER', payload: user });
       } else {
         dispatch({ type: 'SET_LOADING', payload: false });
@@ -131,7 +117,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
 
     initializeAuth();
-  }, [state.user]);
+  }, []);
 
   // Login function
   const login = async (credentials: LoginRequest): Promise<void> => {

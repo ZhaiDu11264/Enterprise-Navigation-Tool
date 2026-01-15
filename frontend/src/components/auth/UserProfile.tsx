@@ -75,10 +75,11 @@ export function UserProfile({ showLogout = true, compact = false }: UserProfileP
     if (!isModalOpen || !user) {
       return;
     }
-    setDisplayName(resolvedDisplayName);
-    setAvatarFile(null);
-    setAvatarPreview(user.avatarUrl || null);
-  }, [isModalOpen, resolvedDisplayName, user]);
+    const nextAvatarUrl = user.avatarUrl || null;
+    setDisplayName(prev => (prev !== resolvedDisplayName ? resolvedDisplayName : prev));
+    setAvatarFile(prev => (prev ? null : prev));
+    setAvatarPreview(prev => (prev !== nextAvatarUrl ? nextAvatarUrl : prev));
+  }, [isModalOpen, resolvedDisplayName, user?.id, user?.avatarUrl]);
 
   useEffect(() => {
     if (!isModalOpen) {

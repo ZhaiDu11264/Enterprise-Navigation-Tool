@@ -6,10 +6,7 @@ export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3
 // Create axios instance with default configuration
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  timeout: 10000
 });
 
 // Request interceptor to add auth token
@@ -19,6 +16,18 @@ apiClient.interceptors.request.use(
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    const method = (config.method || 'get').toLowerCase();
+    const isFormData = typeof FormData !== 'undefined' && config.data instanceof FormData;
+    if (config.headers) {
+      if (isFormData) {
+        delete config.headers['Content-Type'];
+        delete config.headers['content-type'];
+      } else if (['post', 'put', 'patch'].includes(method)) {
+        config.headers['Content-Type'] = 'application/json';
+      }
+    }
+
     return config;
   },
   (error) => {
