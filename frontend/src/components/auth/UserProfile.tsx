@@ -71,15 +71,17 @@ export function UserProfile({ showLogout = true, compact = false }: UserProfileP
 
   const resolvedDisplayName = user?.displayName?.trim() || user?.username || '';
 
+  const userId = user?.id;
+  const userAvatarUrl = user?.avatarUrl || null;
+
   useEffect(() => {
-    if (!isModalOpen || !user) {
+    if (!isModalOpen || !userId) {
       return;
     }
-    const nextAvatarUrl = user.avatarUrl || null;
     setDisplayName(prev => (prev !== resolvedDisplayName ? resolvedDisplayName : prev));
     setAvatarFile(prev => (prev ? null : prev));
-    setAvatarPreview(prev => (prev !== nextAvatarUrl ? nextAvatarUrl : prev));
-  }, [isModalOpen, resolvedDisplayName, user?.id, user?.avatarUrl]);
+    setAvatarPreview(prev => (prev !== userAvatarUrl ? userAvatarUrl : prev));
+  }, [isModalOpen, resolvedDisplayName, userId, userAvatarUrl]);
 
   useEffect(() => {
     if (!isModalOpen) {
