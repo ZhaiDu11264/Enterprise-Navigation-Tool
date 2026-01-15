@@ -1,0 +1,223 @@
+/* CSS Variables for theming - shared with ManualSyncButton */
+:root {
+  --refresh-btn-bg: #f8f9fa;
+  --refresh-btn-border: #dee2e6;
+  --refresh-btn-color: #495057;
+  --refresh-btn-hover-bg: #e9ecef;
+  --refresh-btn-hover-border: #adb5bd;
+  --refresh-btn-hover-color: #212529;
+  --refresh-btn-active-bg: #dee2e6;
+  --refresh-btn-disabled-bg: #6c757d;
+  --refresh-btn-disabled-border: #6c757d;
+  --refresh-btn-disabled-color: #ffffff;
+  --refresh-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --refresh-shadow-hover: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* Dark mode variables */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --refresh-btn-bg: #343a40;
+    --refresh-btn-border: #495057;
+    --refresh-btn-color: #f8f9fa;
+    --refresh-btn-hover-bg: #495057;
+    --refresh-btn-hover-border: #6c757d;
+    --refresh-btn-hover-color: #ffffff;
+    --refresh-btn-active-bg: #6c757d;
+    --refresh-btn-disabled-bg: #495057;
+    --refresh-btn-disabled-border: #495057;
+    --refresh-btn-disabled-color: #adb5bd;
+    --refresh-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --refresh-shadow-hover: 0 2px 6px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* Explicit dark mode class support */
+[data-theme="dark"] {
+  --refresh-btn-bg: #343a40;
+  --refresh-btn-border: #495057;
+  --refresh-btn-color: #f8f9fa;
+  --refresh-btn-hover-bg: #495057;
+  --refresh-btn-hover-border: #6c757d;
+  --refresh-btn-hover-color: #ffffff;
+  --refresh-btn-active-bg: #6c757d;
+  --refresh-btn-disabled-bg: #495057;
+  --refresh-btn-disabled-border: #495057;
+  --refresh-btn-disabled-color: #adb5bd;
+  --refresh-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --refresh-shadow-hover: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--refresh-btn-bg);
+  border: 1px solid var(--refresh-btn-border);
+  border-radius: 8px;
+  color: var(--refresh-btn-color);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: var(--refresh-shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+.refresh-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.5s;
+}
+
+.refresh-btn:hover {
+  background: var(--refresh-btn-hover-bg);
+  border-color: var(--refresh-btn-hover-border);
+  color: var(--refresh-btn-hover-color);
+  box-shadow: var(--refresh-shadow-hover);
+  transform: translateY(-1px);
+}
+
+.refresh-btn:hover::before {
+  left: 100%;
+}
+
+.refresh-btn:active {
+  background: var(--refresh-btn-active-bg);
+  transform: translateY(0);
+  box-shadow: var(--refresh-shadow);
+}
+
+.refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+  background: var(--refresh-btn-disabled-bg);
+  border-color: var(--refresh-btn-disabled-border);
+  color: var(--refresh-btn-disabled-color);
+  transform: none;
+  box-shadow: none;
+}
+
+.refresh-btn:disabled::before {
+  display: none;
+}
+
+.refresh-icon {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+}
+
+.refresh-icon.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Compact mode */
+.refresh-btn.compact {
+  padding: 6px 12px;
+  font-size: 12px;
+  gap: 6px;
+}
+
+.refresh-btn.compact .refresh-icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* Theme variants */
+.refresh-btn.primary {
+  background: #007bff;
+  border-color: #007bff;
+  color: white;
+}
+
+.refresh-btn.primary:hover {
+  background: #0056b3;
+  border-color: #0056b3;
+  color: white;
+}
+
+.refresh-btn.primary:active {
+  background: #004085;
+}
+
+[data-theme="dark"] .refresh-btn.primary {
+  background: #0d6efd;
+  border-color: #0d6efd;
+}
+
+[data-theme="dark"] .refresh-btn.primary:hover {
+  background: #0b5ed7;
+  border-color: #0b5ed7;
+}
+
+.refresh-btn.success {
+  background: #28a745;
+  border-color: #28a745;
+  color: white;
+}
+
+.refresh-btn.success:hover {
+  background: #1e7e34;
+  border-color: #1e7e34;
+}
+
+[data-theme="dark"] .refresh-btn.success {
+  background: #198754;
+  border-color: #198754;
+}
+
+[data-theme="dark"] .refresh-btn.success:hover {
+  background: #146c43;
+  border-color: #146c43;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .refresh-btn {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+  
+  .refresh-icon {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+/* Focus styles for accessibility */
+.refresh-btn:focus {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+}
+
+[data-theme="dark"] .refresh-btn:focus {
+  outline-color: #0d6efd;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .refresh-btn {
+    border-width: 2px;
+  }
+}

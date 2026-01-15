@@ -1,0 +1,162 @@
+/* 完全复制编辑按钮样式 */
+.manual-sync-button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.sync-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 8px 16px;
+  background-color: #3b82f6;
+  border: 1px solid #3b82f6;
+  border-radius: 6px;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+  height: 40px;
+  box-sizing: border-box;
+}
+
+.sync-btn:hover {
+  background-color: #2563eb;
+  border-color: #2563eb;
+}
+
+.sync-btn svg {
+  flex-shrink: 0;
+}
+
+.sync-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+  background-color: #6b7280;
+  border-color: #6b7280;
+}
+
+.sync-icon {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.3s ease;
+  flex-shrink: 0;
+}
+
+.sync-icon.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.sync-message {
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  max-width: 280px;
+  word-wrap: break-word;
+  border: 1px solid;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sync-message.success {
+  background: #dcfce7;
+  color: #166534;
+  border-color: #bbf7d0;
+}
+
+.sync-message.error {
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.sync-message.warning {
+  background: #fefce8;
+  color: #ca8a04;
+  border-color: #fde047;
+}
+
+.last-sync {
+  font-size: 11px;
+  color: #64748b;
+  font-style: italic;
+  opacity: 0.8;
+}
+
+/* 响应式设计 - 完全复制 */
+@media (max-width: 768px) {
+  .sync-btn {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .sync-btn {
+    order: -1;
+    justify-content: center;
+  }
+}
+
+/* 深色模式支持 */
+body.theme-dark .sync-btn {
+  background-color: #3b82f6;
+  border-color: #3b82f6;
+  color: white;
+}
+
+body.theme-dark .sync-btn:hover {
+  background-color: #2563eb;
+  border-color: #2563eb;
+}
+
+body.theme-dark .sync-btn:disabled {
+  background-color: #6b7280;
+  border-color: #6b7280;
+}
+
+body.theme-dark .sync-message.success {
+  background: #064e3b;
+  color: #6ee7b7;
+  border-color: #065f46;
+}
+
+body.theme-dark .sync-message.error {
+  background: #7f1d1d;
+  color: #fca5a5;
+  border-color: #991b1b;
+}
+
+body.theme-dark .sync-message.warning {
+  background: #78350f;
+  color: #fcd34d;
+  border-color: #92400e;
+}
+
+body.theme-dark .last-sync {
+  color: #94a3b8;
+}

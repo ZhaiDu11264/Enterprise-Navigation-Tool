@@ -1,9 +1,10 @@
 import { Router, Request, Response } from 'express';
-import { body, validationResult } from 'express-validator';
+import { body, query, validationResult } from 'express-validator';
 import os from 'os';
 import { executeQuery } from '../config/database';
 import { UserService } from '../models/User';
 import { AuditLogService } from '../models/AuditLog';
+import { FeedbackService } from '../models/Feedback';
 import { NotificationService, NotificationLevel } from '../models/Notification';
 import { ConfigurationService } from '../models/DefaultConfiguration';
 import { authenticateToken, requireAdmin } from '../middleware/auth';
@@ -713,6 +714,118 @@ router.get('/logs', async (req: Request, res: Response): Promise<void> => {
       error: {
         code: 'INTERNAL_ERROR',
         message: 'Failed to retrieve audit logs',
+        timestamp: new Date().toISOString(),
+        requestId: req.headers['x-request-id'] || 'unknown'
+      }
+    });
+  }
+});
+
+/**
+ * GET /api/admin/feedback
+ * List user feedback entries (admin only)
+ */
+router.get('/feedback', [
+  query('userId')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('userId must be a positive integer'),
+  query('type')
+    .optional()
+    .isIn(['bug', 'feature', 'ui', 'data', 'other'])
+    .withMessage('Invalid feedback type'),
+  query('status')
+    .optional()
+    .isIn(['new', 'reviewed', 'resolved'])
+    .withMessage('Invalid feedback status'),
+  query('keyword')
+    .optional()
+    .isLength({ max: 200 })
+    .withMessage('keyword is too long'),
+  query('from')
+    .optional()
+    .isISO8601()
+    .withMessage('from must be a valid date'),
+  query('to')
+    .optional()
+    .isISO8601()
+    .withMessage('to must be a valid date'),
+  query('limit')
+    .optional()
+    .isInt({ min: 1, max: 200 })
+    .withMessage('limit must be between 1 and 200'),
+  query('offset')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('offset must be zero or positive')
+], async (req: Request, res: Response): Promise<void> => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(400).json({
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid query parameters',
+          details: errors.array(),
+          timestamp: new Date().toISOString(),
+          requestId: req.headers['x-request-id'] || 'unknown'
+        }
+      });
+      return;
+    }
+
+    const { userId, type, status, keyword, from, to, limit, offset } = req.query;
+    const parsedUserId = typeof userId === 'string' ? Number(userId) : undefined;
+    const parsedLimit = typeof limit === 'string' ? Number(limit) : 50;
+    const parsedOffset = typeof offset === 'string' ? Number(offset) : 0;
+
+    const result = await FeedbackService.listFeedback({
+      userId: Number.isFinite(parsedUserId) ? parsedUserId : undefined,
+      type: typeof type === 'string' ? type : undefined,
+      status: typeof status === 'string' ? status : undefined,
+      keyword: typeof keyword === 'string' ? keyword : undefined,
+      from: typeof from === 'string' ? from : undefined,
+      to: typeof to === 'string' ? to : undefined,
+      limit: Number.isFinite(parsedLimit) ? parsedLimit : 50,
+      offset: Number.isFinite(parsedOffset) ? parsedOffset : 0
+    });
+
+    res.status(200).json({
+      success: true,
+      data: result,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Admin feedback list error:', error);
+    res.status(500).json({
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Failed to retrieve feedback',
+        timestamp: new Date().toISOString(),
+        requestId: req.headers['x-request-id'] || 'unknown'
+      }
+    });
+  }
+});
+
+/**
+ * GET /api/admin/feedback/stats
+ * Feedback statistics (admin only)
+ */
+router.get('/feedback/stats', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const stats = await FeedbackService.getStats();
+    res.status(200).json({
+      success: true,
+      data: { stats },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Admin feedback stats error:', error);
+    res.status(500).json({
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Failed to retrieve feedback stats',
         timestamp: new Date().toISOString(),
         requestId: req.headers['x-request-id'] || 'unknown'
       }

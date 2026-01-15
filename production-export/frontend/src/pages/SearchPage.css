@@ -1,0 +1,223 @@
+.search-page {
+  width: 100%;
+  min-height: 100vh;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+}
+
+.search-header {
+  background: white;
+  padding: 1rem 5.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  z-index: 10;
+}
+
+.search-header-left {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.search-header h1 {
+  margin: 0;
+  color: #333;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.search-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #eef2ff;
+  border: none;
+  color: #1f2a44;
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.search-back:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
+}
+
+.search-bar-section {
+  background: white;
+  padding: 1.5rem;
+  position: relative;
+  z-index: 5;
+}
+
+.search-content {
+  padding: 1rem 9.5rem 3rem;
+  max-width: 2400px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.search-content h2 {
+  margin: 0 0 1rem 0;
+  font-size: 1.15rem;
+  color: #1f2a44;
+}
+
+.search-group-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.search-group-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.25rem;
+}
+
+.search-group-card {
+  background: white;
+  border-radius: 14px;
+  padding: 1rem;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.search-group-card[role="button"] {
+  cursor: pointer;
+}
+
+.search-group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.search-group-name {
+  font-weight: 600;
+  color: #1f2a44;
+}
+
+.search-group-count {
+  background: #e2e8f0;
+  color: #1f2a44;
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.75rem;
+}
+
+.search-group-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.search-links-section {
+  display: flex;
+  flex-direction: column;
+}
+
+body.transparent-mode .search-page {
+  background: url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80') center center / cover no-repeat fixed;
+}
+
+body.transparent-mode .search-page::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(1px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+body.transparent-mode .search-header,
+body.transparent-mode .search-bar-section {
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(20px);
+}
+
+body.theme-dark .search-page {
+  background: #0f172a;
+}
+
+body.theme-dark .search-header {
+  background: #111827;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+body.theme-dark .search-bar-section {
+  background: #111827;
+}
+
+body.theme-dark .search-header h1,
+body.theme-dark .search-content h2,
+body.theme-dark .search-group-name {
+  color: #e2e8f0;
+}
+
+body.theme-dark .search-back {
+  background: rgba(148, 163, 184, 0.2);
+  color: #e2e8f0;
+}
+
+body.theme-dark .search-group-card {
+  background: rgba(15, 23, 42, 0.7);
+  box-shadow: none;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+body.theme-dark .search-group-count {
+  background: rgba(148, 163, 184, 0.2);
+  color: #e2e8f0;
+}
+
+body.theme-dark.transparent-mode .search-page {
+  background: url('https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1920&q=80') center center / cover no-repeat fixed;
+}
+
+body.theme-dark.transparent-mode .search-page::before {
+  background: rgba(15, 23, 42, 0.2);
+}
+
+body.theme-dark.transparent-mode .search-header,
+body.theme-dark.transparent-mode .search-bar-section,
+body.theme-dark.transparent-mode .search-group-card {
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(20px);
+}
+
+@media (max-width: 1024px) {
+  .search-header,
+  .search-bar-section {
+    padding: 1rem 2rem;
+  }
+
+  .search-content {
+    padding: 1rem 2rem 2rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .search-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .search-header-left {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+}

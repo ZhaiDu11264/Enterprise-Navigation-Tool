@@ -98,6 +98,22 @@ CREATE TABLE user_sessions (
   INDEX idx_user_expires (user_id, expires_at)
 );
 
+-- User feedback table
+CREATE TABLE user_feedback (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  user_id INT NOT NULL,
+  type ENUM('bug', 'feature', 'ui', 'data', 'other') NOT NULL,
+  message TEXT NOT NULL,
+  status ENUM('new', 'reviewed', 'resolved') DEFAULT 'new',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_feedback_user (user_id),
+  INDEX idx_feedback_type (type),
+  INDEX idx_feedback_status (status),
+  INDEX idx_feedback_created (created_at)
+);
+
 -- Favicon cache table
 CREATE TABLE favicon_cache (
   id INT PRIMARY KEY AUTO_INCREMENT,

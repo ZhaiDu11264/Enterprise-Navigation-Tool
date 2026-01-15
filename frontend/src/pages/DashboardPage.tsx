@@ -1,9 +1,9 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { UserProfile } from '../components/auth';
 import { NavigationView, GroupModal, LinkModal, Sidebar } from '../components/navigation';
 import { ModernSearchBar } from '../components/navigation/ModernSearchBar';
-import { SettingsModal, useNotifications, Footer, ScrollToTop } from '../components/common';
+import { SettingsModal, useNotifications, Footer, ScrollToTop, FeedbackModal, NotificationModal } from '../components/common';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSettings } from '../contexts/SettingsContext';
@@ -45,11 +45,13 @@ export function DashboardPage() {
   const [groupModalMode, setGroupModalMode] = useState<'create' | 'edit'>('create');
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
 
-  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [notificationPreviewOpen, setNotificationPreviewOpen] = useState(false);
   const [notificationItems, setNotificationItems] = useState<UserNotification[]>([]);
   const [notificationUnreadCount, setNotificationUnreadCount] = useState(0);
   const [notificationLoading, setNotificationLoading] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [notificationModalOpen, setNotificationModalOpen] = useState(false);
 
   const initialGroupParam = searchParams.get('groupId');
   const initialGroupId = initialGroupParam ? Number(initialGroupParam) : null;
@@ -82,6 +84,10 @@ export function DashboardPage() {
       chinese: 'Chinese',
       close: 'Close',
       notificationsLabel: 'Notifications',
+      notificationsCenter: 'Notification Center',
+      notificationsClear: 'Clear all',
+      notificationsDelete: 'Delete',
+      feedbackLabel: 'Feedback',
       notificationsEmpty: 'No notifications yet.',
       notificationsLoading: 'Loading notifications...',
       markRead: 'Mark read',
@@ -137,18 +143,22 @@ export function DashboardPage() {
       expandGroups: '展开分组',
       settingsTitle: '设置',
       darkMode: '深色模式',
-      compactMode: '简约显示',
+      compactMode: '紧凑显示',
       transparentMode: '通透模式',
       language: '语言',
       gridSize: '图标大小',
-      gridSizeSmall: '小 (每行更多)',
-      gridSizeMedium: '中 (默认)',
-      gridSizeLarge: '大 (每行更少)',
-      gridSizeExtraLarge: '特大 (每行最少)',
+      gridSizeSmall: '小(每行更多)',
+      gridSizeMedium: '中(默认)',
+      gridSizeLarge: '大(每行更少)',
+      gridSizeExtraLarge: '特大(每行最少)',
       english: '英文',
       chinese: '中文',
       close: '关闭',
       notificationsLabel: '通知',
+      notificationsCenter: '通知中心',
+      notificationsClear: '清空全部',
+      notificationsDelete: '删除',
+      feedbackLabel: '反馈',
       notificationsEmpty: '暂无通知。',
       notificationsLoading: '加载通知中...',
       markRead: '标记已读',
@@ -156,17 +166,17 @@ export function DashboardPage() {
       retry: '重试',
       notifications: {
         linkAddedTitle: '链接已添加',
-        linkAddedMessage: (name: string) => `“${name}”已添加。`,
+        linkAddedMessage: (name: string) => "" 已添加。,
         linkUpdatedTitle: '链接已更新',
-        linkUpdatedMessage: (name: string) => `“${name}”已更新。`,
+        linkUpdatedMessage: (name: string) => "" 已更新。,
         groupCreatedTitle: '分组已创建',
-        groupCreatedMessage: (name: string) => `“${name}”已添加。`,
+        groupCreatedMessage: (name: string) => "" 已添加。,
         groupUpdatedTitle: '分组已更新',
-        groupUpdatedMessage: (name: string) => `“${name}”已更新。`
+        groupUpdatedMessage: (name: string) => "" 已更新。
       },
       confirms: {
-        deleteLink: (name: string) => `确认删除“${name}”？`,
-        deleteGroup: (name: string) => `确认删除分组“${name}”？`
+        deleteLink: (name: string) => 确认删除“”？,
+        deleteGroup: (name: string) => 确认删除分组“”？
       },
       errors: {
         loadFailed: '加载导航数据失败，请刷新重试。',
@@ -271,23 +281,19 @@ export function DashboardPage() {
   }, [loadUnreadCount]);
 
   useEffect(() => {
-    if (!notificationOpen) {
+    if (!notificationPreviewOpen) {
       return;
     }
     loadNotifications();
-    const handleClickOutside = (event: MouseEvent) => {
-      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
-        setNotificationOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [notificationOpen, loadNotifications]);
+  }, [notificationPreviewOpen, loadNotifications]);
 
-  const handleNotificationToggle = () => {
-    setNotificationOpen(prev => !prev);
+  const handleNotificationClick = () => {
+    setNotificationPreviewOpen(false);
+    setNotificationModalOpen(true);
+  };
+
+  const handleNotificationHover = (open: boolean) => {
+    setNotificationPreviewOpen(open);
   };
 
   const handleNotificationRead = async (notificationId: number) => {
@@ -467,11 +473,23 @@ export function DashboardPage() {
               {t.adminTools}
             </button>
           )}
-          <div className="notification-bell" ref={notificationRef}>
+          <button
+            type="button"
+            className="feedback-btn"
+            onClick={() => setFeedbackOpen(true)}
+          >
+            {t.feedbackLabel}
+          </button>
+          <div
+            className="notification-bell"
+            ref={notificationRef}
+            onMouseEnter={() => handleNotificationHover(true)}
+            onMouseLeave={() => handleNotificationHover(false)}
+          >
             <button
               type="button"
               className="notification-bell-btn"
-              onClick={handleNotificationToggle}
+              onClick={handleNotificationClick}
               aria-label={t.notificationsLabel}
             >
               <span className="notification-bell-icon">🔔</span>
@@ -479,7 +497,7 @@ export function DashboardPage() {
                 <span className="notification-badge">{notificationUnreadCount}</span>
               )}
             </button>
-            {notificationOpen && (
+            {notificationPreviewOpen && (
               <div className="notification-dropdown">
                 <div className="notification-dropdown-header">{t.notificationsLabel}</div>
                 <div className="notification-dropdown-list">
@@ -488,7 +506,7 @@ export function DashboardPage() {
                   ) : notificationItems.length === 0 ? (
                     <div className="notification-dropdown-empty">{t.notificationsEmpty}</div>
                   ) : (
-                    notificationItems.map(item => (
+                    notificationItems.slice(0, 3).map(item => (
                       <div
                         key={item.id}
                         className={`notification-dropdown-item ${item.readAt ? 'read' : 'unread'}`}
@@ -625,6 +643,24 @@ export function DashboardPage() {
         }}
       />
 
+      <FeedbackModal
+        isOpen={feedbackOpen}
+        onClose={() => setFeedbackOpen(false)}
+      />
+
+      <NotificationModal
+        isOpen={notificationModalOpen}
+        onClose={() => setNotificationModalOpen(false)}
+        labels={{
+          title: t.notificationsCenter,
+          empty: t.notificationsEmpty,
+          loading: t.notificationsLoading,
+          markRead: t.markRead,
+          delete: t.notificationsDelete,
+          clearAll: t.notificationsClear
+        }}
+      />
+
       <GroupModal
         isOpen={groupModalOpen}
         onClose={() => setGroupModalOpen(false)}
@@ -649,3 +685,4 @@ export function DashboardPage() {
     </div>
   );
 }
+
