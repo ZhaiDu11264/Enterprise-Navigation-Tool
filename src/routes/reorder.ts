@@ -4,6 +4,7 @@ import { LinkService } from '../models/WebsiteLink';
 import { GroupService } from '../models/Group';
 import { authenticateToken } from '../middleware/auth';
 import { LinkOrder } from '../models/interfaces';
+import { logAudit } from '../utils/audit';
 
 const router = Router();
 
@@ -108,6 +109,12 @@ router.put('/batch', [
       await LinkService.reorderLinks(req.user.userId, linkOperations);
     }
 
+    await logAudit(req, {
+      userId: req.user.userId,
+      action: 'reorder.batch',
+      description: `Batch reorder: ${linkOperations.length} links, ${groupOperations.length} groups`
+    });
+
     res.status(200).json({
       success: true,
       message: 'Batch reordering completed successfully',
@@ -209,6 +216,12 @@ router.put('/links', [
 
     await LinkService.reorderLinks(req.user.userId, linkOrders as LinkOrder[]);
 
+    await logAudit(req, {
+      userId: req.user.userId,
+      action: 'reorder.links',
+      description: `Reordered ${linkOrders.length} links`
+    });
+
     res.status(200).json({
       success: true,
       message: 'Links reordered successfully',
@@ -303,6 +316,12 @@ router.put('/groups', [
     }
 
     await GroupService.reorderGroups(req.user.userId, groupOrders);
+
+    await logAudit(req, {
+      userId: req.user.userId,
+      action: 'reorder.groups',
+      description: `Reordered ${groupOrders.length} groups`
+    });
 
     res.status(200).json({
       success: true,

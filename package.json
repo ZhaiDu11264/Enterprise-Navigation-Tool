@@ -19,7 +19,8 @@
     "reset-db": "ts-node scripts/reset-database.ts",
     "clear-data": "ts-node scripts/clear-data.ts",
     "check-admin": "ts-node scripts/check-admin.ts",
-    "fix-admin": "ts-node scripts/fix-admin-password.ts"
+    "fix-admin": "ts-node scripts/fix-admin-password.ts",
+    "start:all": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"Start-Process powershell -ArgumentList '-NoExit','-Command','cd .\\\\frontend; npm run start:fast'; npm start\""
   },
   "keywords": [
     "enterprise",

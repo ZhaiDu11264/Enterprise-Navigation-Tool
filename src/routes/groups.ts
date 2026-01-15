@@ -3,6 +3,7 @@ import { body, param, validationResult } from 'express-validator';
 import { GroupService } from '../models/Group';
 import { ConfigurationService } from '../models/DefaultConfiguration';
 import { authenticateToken } from '../middleware/auth';
+import { logAudit } from '../utils/audit';
 
 const router = Router();
 
@@ -229,6 +230,14 @@ router.post('/', [
       sortOrder
     });
 
+    await logAudit(req, {
+      userId: req.user.userId,
+      action: 'group.create',
+      entityType: 'group',
+      entityId: newGroup.id,
+      description: `Created group "${newGroup.name}"`
+    });
+
     res.status(201).json({
       success: true,
       data: { group: newGroup },
@@ -322,6 +331,14 @@ router.put('/:id', [
 
     const updatedGroup = await GroupService.updateGroup(groupId, req.user!.userId, updates);
 
+    await logAudit(req, {
+      userId: req.user.userId,
+      action: 'group.update',
+      entityType: 'group',
+      entityId: updatedGroup.id,
+      description: `Updated group "${updatedGroup.name}"`
+    });
+
     res.status(200).json({
       success: true,
       data: { group: updatedGroup },
@@ -393,6 +410,14 @@ router.delete('/:id', [
 
     const groupId = parseInt(req.params.id!);
     await GroupService.deleteGroup(groupId, req.user!.userId);
+
+    await logAudit(req, {
+      userId: req.user.userId,
+      action: 'group.delete',
+      entityType: 'group',
+      entityId: groupId,
+      description: 'Deleted group'
+    });
 
     res.status(200).json({
       success: true,
@@ -494,6 +519,13 @@ router.put('/reorder', [
     }
 
     await GroupService.reorderGroups(req.user.userId, groupOrders);
+
+    await logAudit(req, {
+      userId: req.user.userId,
+      action: 'group.reorder',
+      entityType: 'group',
+      description: `Reordered ${groupOrders.length} groups`
+    });
 
     res.status(200).json({
       success: true,

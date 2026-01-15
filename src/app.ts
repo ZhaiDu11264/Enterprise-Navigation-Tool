@@ -52,6 +52,10 @@ app.get('/health', (req, res) => {
 app.use('/api', apiRoutes);
 
 // Static file serving for uploads
+app.use('/uploads', (req, res, next) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+});
 app.use('/uploads', express.static(config.uploadDir));
 
 // 404 handler for unmatched routes

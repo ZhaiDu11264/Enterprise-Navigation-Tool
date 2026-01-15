@@ -93,6 +93,18 @@ uploads/
 logs
 *.log
 
+# Test artifacts
+test-*.html
+test-*.csv
+server-*.log
+
+# Local scripts or shortcuts
+*.lnk
+auto-card.js
+
+# Binary or large docs not needed for runtime
+*.pdf
+
 # OS generated files
 .DS_Store
 .DS_Store?

@@ -3,6 +3,7 @@ import multer from 'multer';
 import { body, query, validationResult } from 'express-validator';
 import { authenticateToken } from '../middleware/auth';
 import { ImportService, ImportRow } from '../services/importService';
+import { logAudit } from '../utils/audit';
 
 const router = Router();
 
@@ -67,6 +68,12 @@ router.post('/file',
       );
 
       if (result.success) {
+        await logAudit(req, {
+          userId,
+          action: 'import.file',
+          description: `Imported ${result.successfulImports} links from file`
+        });
+
         return res.status(200).json({
           message: 'Import completed successfully',
           result: {
@@ -151,6 +158,12 @@ router.post('/batch',
       const result = await ImportService.batchImport(userId, importRows, validateUrls);
 
       if (result.success) {
+        await logAudit(req, {
+          userId,
+          action: 'import.batch',
+          description: `Batch imported ${result.successfulImports} links`
+        });
+
         return res.status(200).json({
           message: 'Batch import completed successfully',
           result: {

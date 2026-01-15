@@ -1,0 +1,40 @@
+.search-and-quick-access {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.search-section {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.search-section .search-interface {
+  width: 100%;
+  max-width: 600px;
+}
+
+.content-section {
+  width: 100%;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .search-and-quick-access {
+    gap: 20px;
+  }
+  
+  .search-section .search-interface {
+    max-width: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .search-and-quick-access {
+    gap: 16px;
+  }
+}

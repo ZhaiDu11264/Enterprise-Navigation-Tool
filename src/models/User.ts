@@ -6,11 +6,14 @@ import bcrypt from 'bcrypt';
 const mapUserRowToUser = (row: UserRow): User => ({
   id: row.id,
   username: row.username,
+  displayName: row.display_name,
+  avatarUrl: row.avatar_url,
   email: row.email,
   passwordHash: row.password_hash,
   role: row.role,
   createdAt: row.created_at,
   lastLoginAt: row.last_login_at,
+  updatedAt: row.updated_at ?? null,
   isActive: row.is_active
 });
 
@@ -21,11 +24,12 @@ export class UserService {
     const passwordHash = await bcrypt.hash(userData.password, saltRounds);
     
     const query = `
-      INSERT INTO users (username, email, password_hash, role)
-      VALUES (?, ?, ?, ?)
+      INSERT INTO users (username, display_name, email, password_hash, role)
+      VALUES (?, ?, ?, ?, ?)
     `;
     
     const result = await executeQuery<{ insertId: number }>(query, [
+      userData.username,
       userData.username,
       userData.email,
       passwordHash,
@@ -131,7 +135,7 @@ export class UserService {
 
   // Update user information
   static async updateUser(id: number, updates: Partial<User>): Promise<User> {
-    const allowedFields = ['username', 'email', 'role', 'isActive'];
+    const allowedFields = ['username', 'displayName', 'avatarUrl', 'email', 'role', 'isActive'];
     const updateFields: string[] = [];
     const updateValues: any[] = [];
     
@@ -139,6 +143,10 @@ export class UserService {
       if (allowedFields.includes(key) && value !== undefined) {
         if (key === 'isActive') {
           updateFields.push('is_active = ?');
+        } else if (key === 'displayName') {
+          updateFields.push('display_name = ?');
+        } else if (key === 'avatarUrl') {
+          updateFields.push('avatar_url = ?');
         } else {
           updateFields.push(`${key} = ?`);
         }

@@ -3,11 +3,14 @@
 export interface User {
   id: number;
   username: string;
+  displayName?: string | null;
+  avatarUrl?: string | null;
   email: string;
   passwordHash: string;
   role: 'user' | 'admin';
   createdAt: Date;
   lastLoginAt: Date | null;
+  updatedAt?: Date | null;
   isActive: boolean;
 }
 
@@ -119,11 +122,14 @@ export interface AuthResult {
 export interface UserRow {
   id: number;
   username: string;
+  display_name: string | null;
+  avatar_url: string | null;
   email: string;
   password_hash: string;
   role: 'user' | 'admin';
   created_at: Date;
   last_login_at: Date | null;
+  updated_at?: Date | null;
   is_active: boolean;
 }
 

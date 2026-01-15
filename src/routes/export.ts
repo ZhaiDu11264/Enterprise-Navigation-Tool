@@ -4,6 +4,7 @@ import { authenticateToken } from '../middleware/auth';
 import { ExportService } from '../services/exportService';
 import * as fs from 'fs';
 import * as path from 'path';
+import { logAudit } from '../utils/audit';
 
 const router = Router();
 
@@ -73,6 +74,12 @@ router.get('/',
       // Send file as download
       const filePath = result.filePath!;
       const fileName = result.fileName!;
+
+      await logAudit(req, {
+        userId,
+        action: 'export.user',
+        description: `Exported data as ${format}`
+      });
 
       res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
       res.setHeader('Content-Type', format === 'csv' 
@@ -161,6 +168,12 @@ router.get('/groups',
       const filePath = result.filePath!;
       const fileName = result.fileName!;
 
+      await logAudit(req, {
+        userId,
+        action: 'export.groups',
+        description: `Exported ${groupIds.length} groups as ${format}`
+      });
+
       res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
       res.setHeader('Content-Type', format === 'csv' 
         ? 'text/csv' 
@@ -234,6 +247,12 @@ router.get('/favorites',
       // Send file as download
       const filePath = result.filePath!;
       const fileName = result.fileName!;
+
+      await logAudit(req, {
+        userId,
+        action: 'export.favorites',
+        description: `Exported favorites as ${format}`
+      });
 
       res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
       res.setHeader('Content-Type', format === 'csv' 

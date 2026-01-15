@@ -12,6 +12,7 @@ import exportRoutes from './export';
 import configRoutes from './config';
 import batchRoutes from './batch';
 import simpleImportExportRoutes from './simpleImportExport';
+import notificationRoutes from './notifications';
 
 const router = Router();
 
@@ -23,6 +24,9 @@ router.use('/users', userRoutes);
 
 // Admin routes
 router.use('/admin', adminRoutes);
+
+// Notification routes
+router.use('/notifications', notificationRoutes);
 
 // Configuration routes
 router.use('/config', configRoutes);

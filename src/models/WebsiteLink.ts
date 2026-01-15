@@ -11,12 +11,12 @@ const mapLinkRowToLink = (row: WebsiteLinkRow): WebsiteLink => ({
   description: row.description || undefined,
   iconUrl: row.icon_url || undefined,
   sortOrder: row.sort_order,
-  isFavorite: row.is_favorite,
+  isFavorite: Boolean(row.is_favorite),
   accessCount: row.access_count,
   lastAccessedAt: row.last_accessed_at,
-  isActive: row.is_active,
-  isSystemLink: row.is_system_link,
-  isDeletable: row.is_deletable,
+  isActive: Boolean(row.is_active),
+  isSystemLink: Boolean(row.is_system_link),
+  isDeletable: Boolean(row.is_deletable),
   createdAt: row.created_at,
   updatedAt: row.updated_at
 });
