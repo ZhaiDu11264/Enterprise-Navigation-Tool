@@ -49,9 +49,11 @@ const startServer = async (): Promise<void> => {
     
     // Start HTTP server
     const server = app.listen(config.port, () => {
+      const host = process.env.HOST || 'localhost';
+      const healthUrl = `http://${host}:${config.port}/health`;
       console.log(`🚀 Server running on port ${config.port}`);
       console.log(`📊 Environment: ${config.nodeEnv}`);
-      console.log(`🔗 Health check: http://localhost:${config.port}/health`);
+      console.log(`🔗 Health check: ${healthUrl}`);
     });
 
     // Graceful shutdown handling

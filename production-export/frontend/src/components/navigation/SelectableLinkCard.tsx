@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { WebsiteLink } from '../../types';
+import config from '../../config';
 import './SelectableLinkCard.css';
 
 interface SelectableLinkCardProps {
@@ -52,9 +53,13 @@ const SelectableLinkCard: React.FC<SelectableLinkCardProps> = ({
     // Fallback to favicon service
     try {
       const domain = new URL(link.url).hostname;
-      return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+      const template = config.links.faviconFallbackTemplate;
+      if (template.includes('{domain}')) {
+        return template.replace('{domain}', domain);
+      }
+      return `${template}${domain}`;
     } catch {
-      return '/default-favicon.png';
+      return config.links.defaultFaviconPath;
     }
   }, [link.iconUrl, link.url, imageError]);
 

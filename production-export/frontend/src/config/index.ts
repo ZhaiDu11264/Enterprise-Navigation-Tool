@@ -12,6 +12,14 @@ export const config = {
     tokenKey: 'authToken',
     userKey: 'user',
   },
+  links: {
+    footerContactUrl: process.env.REACT_APP_FOOTER_CONTACT_URL || 'https://f.wps.cn/g/gFXZeyYH',
+    footerIcpUrl: process.env.REACT_APP_FOOTER_ICP_URL || 'https://beian.miit.gov.cn/',
+    faviconFallbackTemplate:
+      process.env.REACT_APP_FAVICON_FALLBACK_URL ||
+      'https://www.google.com/s2/favicons?domain={domain}&sz=32',
+    defaultFaviconPath: process.env.REACT_APP_DEFAULT_FAVICON_PATH || '/default-favicon.png',
+  },
   ui: {
     cardsPerPage: 20,
     searchDebounceMs: 300,

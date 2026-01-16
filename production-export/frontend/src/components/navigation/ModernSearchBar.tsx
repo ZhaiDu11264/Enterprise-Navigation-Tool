@@ -3,15 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { WebsiteLink } from '../../types';
 import { SearchService } from '../../services/searchService';
 import { useDebounce } from '../../hooks/useDebounce';
+import { getSearchEngines, SearchEngine } from '../../config/searchEngines';
 import './ModernSearchBar.css';
-
-interface SearchEngine {
-  name: string;
-  url: string;
-  icon: string;
-  placeholder: string;
-  type?: 'external' | 'internal';
-}
 
 interface ModernSearchBarProps {
   onLinkClick: (link: WebsiteLink) => void;
@@ -24,51 +17,7 @@ interface ModernSearchBarProps {
   initialEngineName?: string;
 }
 
-const DEFAULT_SEARCH_ENGINES: SearchEngine[] = [
-  {
-    name: '\u7ad9\u5185',
-    url: '/search?q=',
-    icon: '\u7ad9',
-    placeholder: '\u7ad9\u5185\u641c\u7d22\u6216\u8f93\u5165\u5173\u952e\u8bcd',
-    type: 'internal'
-  },
-  {
-    name: '百度',
-    url: 'https://www.baidu.com/s?wd=',
-    icon: '百',
-    placeholder: '百度搜索或输入网址'
-  },
-  {
-    name: 'Google',
-    url: 'https://www.google.com/search?q=',
-    icon: 'G',
-    placeholder: 'Google搜索或输入网址'
-  },
-  {
-    name: 'Yandex',
-    url: 'https://yandex.com/search/?text=',
-    icon: 'Y',
-    placeholder: 'Yandex搜索或输入网址'
-  },
-  {
-    name: '搜狗',
-    url: 'https://www.sogou.com/web?query=',
-    icon: '搜',
-    placeholder: '搜狗搜索或输入网址'
-  },
-  {
-    name: '必应',
-    url: 'https://www.bing.com/search?q=',
-    icon: 'B',
-    placeholder: '必应搜索或输入网址'
-  },
-  {
-    name: '360',
-    url: 'https://www.so.com/s?q=',
-    icon: '360',
-    placeholder: '360搜索或输入网址'
-  }
-];
+const SEARCH_ENGINES: SearchEngine[] = getSearchEngines();
 
 export function ModernSearchBar({
   onLinkClick,
@@ -81,8 +30,8 @@ export function ModernSearchBar({
   initialEngineName
 }: ModernSearchBarProps) {
   const defaultSearchEngine =
-    DEFAULT_SEARCH_ENGINES.find((engine) => engine.type !== 'internal') ||
-    DEFAULT_SEARCH_ENGINES[0];
+    SEARCH_ENGINES.find((engine) => engine.type !== 'internal') ||
+    SEARCH_ENGINES[0];
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<WebsiteLink[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -110,7 +59,7 @@ export function ModernSearchBar({
     if (!initialEngineName) {
       return;
     }
-    const preferred = DEFAULT_SEARCH_ENGINES.find((engine) => engine.name === initialEngineName);
+    const preferred = SEARCH_ENGINES.find((engine) => engine.name === initialEngineName);
     if (preferred) {
       setCurrentSearchEngine(preferred);
     }
@@ -340,7 +289,7 @@ export function ModernSearchBar({
   // Handle focus
   const handleFocus = () => {
     setIsFocused(true);
-    console.log('🔍 搜索框获得焦点, 搜索记录数量:', searchHistory.length, '当前查询:', query);
+    console.log('🔍 搜索框获得焦点，搜索记录数量:', searchHistory.length, '当前查询:', query);
     
     // 如果没有输入内容且有搜索记录，显示搜索记录
     if (query.trim().length === 0 && searchHistory.length > 0) {
@@ -357,7 +306,7 @@ export function ModernSearchBar({
   // Handle blur
   const handleBlur = () => {
     setIsFocused(false);
-    // 延长延迟时间，确保点击事件能够执行
+    // 延迟关闭下拉菜单，确保点击事件能执行
     setTimeout(() => {
       setShowSuggestions(false);
       setShowHistory(false);
@@ -414,7 +363,7 @@ export function ModernSearchBar({
                   e.preventDefault();
                   e.stopPropagation();
                   const newState = !showEngineSelector;
-                  console.log('🔍 点击搜索引擎按钮, 切换状态:', showEngineSelector, '→', newState);
+                  console.log('🔍 点击搜索引擎按钮, 切换状态:', showEngineSelector, '=>', newState);
                   setShowEngineSelector(newState);
                 }}
                 title={`使用 ${currentSearchEngine.name} 搜索`}
@@ -436,7 +385,7 @@ export function ModernSearchBar({
                   ref={engineSelectorRef} 
                   className="engine-dropdown"
                 >
-                  {DEFAULT_SEARCH_ENGINES.map((engine) => (
+                  {SEARCH_ENGINES.map((engine) => (
                     <div
                       key={engine.name}
                       className={`engine-option ${engine.name === currentSearchEngine.name ? 'active' : ''}`}
@@ -605,3 +554,6 @@ export function ModernSearchBar({
     </div>
   );
 }
+
+
+

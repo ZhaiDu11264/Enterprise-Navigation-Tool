@@ -1,4 +1,5 @@
 import React from 'react';
+import config from '../../config';
 import './Footer.css';
 
 export function Footer() {
@@ -6,7 +7,7 @@ export function Footer() {
     <footer className="site-footer">
       <div className="footer-content">
         <div className="footer-links">
-          <a href="https://f.wps.cn/g/gFXZeyYH" target="_blank" rel="noopener noreferrer" className="footer-link">
+          <a href={config.links.footerContactUrl} target="_blank" rel="noopener noreferrer" className="footer-link">
             联系我们
           </a>
           <span className="footer-divider">|</span>
@@ -21,7 +22,7 @@ export function Footer() {
         <div className="footer-info">
           <p className="copyright">© 2026 企业网址导航. All rights reserved.</p>
           <p className="icp">
-            <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">
+            <a href={config.links.footerIcpUrl} target="_blank" rel="noopener noreferrer">
               京ICP备XXXXXXX号
             </a>
           </p>
