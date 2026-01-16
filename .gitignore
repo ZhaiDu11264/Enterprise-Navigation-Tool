@@ -86,6 +86,9 @@ jspm_packages/
 # Build output
 dist/
 
+# production-export
+production-export/
+
 # Uploads directory
 uploads/
 

@@ -166,17 +166,17 @@ export function DashboardPage() {
       retry: '重试',
       notifications: {
         linkAddedTitle: '链接已添加',
-        linkAddedMessage: (name: string) => "" 已添加。,
+        linkAddedMessage: (name: string) => `"${name}" 已添加。`,
         linkUpdatedTitle: '链接已更新',
-        linkUpdatedMessage: (name: string) => "" 已更新。,
+        linkUpdatedMessage: (name: string) => `"${name}" 已更新。`,
         groupCreatedTitle: '分组已创建',
-        groupCreatedMessage: (name: string) => "" 已添加。,
+        groupCreatedMessage: (name: string) => `"${name}" 已添加。`,
         groupUpdatedTitle: '分组已更新',
-        groupUpdatedMessage: (name: string) => "" 已更新。
+        groupUpdatedMessage: (name: string) => `"${name}" 已更新。`
       },
       confirms: {
-        deleteLink: (name: string) => 确认删除“”？,
-        deleteGroup: (name: string) => 确认删除分组“”？
+        deleteLink: (name: string) => `确认删除“${name}”？`,
+        deleteGroup: (name: string) => `确认删除分组“${name}”？`
       },
       errors: {
         loadFailed: '加载导航数据失败，请刷新重试。',

@@ -5,6 +5,7 @@ import { executeQuery } from '../config/database';
 import { UserService } from '../models/User';
 import { AuditLogService } from '../models/AuditLog';
 import { FeedbackService } from '../models/Feedback';
+import { FeedbackQuery, FeedbackStatus, FeedbackType } from '../models/interfaces';
 import { NotificationService, NotificationLevel } from '../models/Notification';
 import { ConfigurationService } from '../models/DefaultConfiguration';
 import { authenticateToken, requireAdmin } from '../middleware/auth';
@@ -779,16 +780,31 @@ router.get('/feedback', [
     const parsedLimit = typeof limit === 'string' ? Number(limit) : 50;
     const parsedOffset = typeof offset === 'string' ? Number(offset) : 0;
 
-    const result = await FeedbackService.listFeedback({
-      userId: Number.isFinite(parsedUserId) ? parsedUserId : undefined,
-      type: typeof type === 'string' ? type : undefined,
-      status: typeof status === 'string' ? status : undefined,
-      keyword: typeof keyword === 'string' ? keyword : undefined,
-      from: typeof from === 'string' ? from : undefined,
-      to: typeof to === 'string' ? to : undefined,
+    const feedbackQuery: FeedbackQuery = {
       limit: Number.isFinite(parsedLimit) ? parsedLimit : 50,
       offset: Number.isFinite(parsedOffset) ? parsedOffset : 0
-    });
+    };
+
+    if (Number.isFinite(parsedUserId)) {
+      feedbackQuery.userId = parsedUserId as number;
+    }
+    if (typeof type === 'string') {
+      feedbackQuery.type = type as FeedbackType;
+    }
+    if (typeof status === 'string') {
+      feedbackQuery.status = status as FeedbackStatus;
+    }
+    if (typeof keyword === 'string') {
+      feedbackQuery.keyword = keyword;
+    }
+    if (typeof from === 'string') {
+      feedbackQuery.from = from;
+    }
+    if (typeof to === 'string') {
+      feedbackQuery.to = to;
+    }
+
+    const result = await FeedbackService.listFeedback(feedbackQuery);
 
     res.status(200).json({
       success: true,

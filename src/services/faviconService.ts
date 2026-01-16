@@ -24,16 +24,11 @@ export interface FaviconService {
 }
 
 class FaviconServiceImpl implements FaviconService {
-  private readonly defaultIconPath = '/uploads/icons/default-favicon.svg';
-  private readonly fallbackIcons = [
-    '/uploads/icons/website-icon.svg',
-    '/uploads/icons/link-icon.svg',
-    '/uploads/icons/globe-icon.svg'
-  ];
-  private readonly externalFallbacks = [
-    (domain: string) => `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
-    (domain: string) => `https://icons.duckduckgo.com/ip3/${domain}.ico`
-  ];
+  private readonly defaultIconPath = config.faviconDefaultIconPath;
+  private readonly fallbackIcons = config.faviconFallbackIcons;
+  private readonly externalFallbacks = config.faviconExternalFallbacks.map(
+    template => (domain: string) => template.replace('{domain}', domain)
+  );
 
   /**
    * Extract favicon from a given URL

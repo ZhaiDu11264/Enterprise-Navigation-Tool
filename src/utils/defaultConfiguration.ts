@@ -9,10 +9,13 @@ const DEFAULT_ADMIN = {
   role: 'admin' as const
 };
 
-export const DEFAULT_CONFIGURATION_NAME = '默认企业配置';
-export const DEFAULT_CONFIGURATION_DESCRIPTION = '包含内部办公系统的标准配置（新用户注册时自动应用）';
+export const DEFAULT_CONFIGURATION_NAME =
+  process.env.DEFAULT_CONFIGURATION_NAME || '默认企业配置';
+export const DEFAULT_CONFIGURATION_DESCRIPTION =
+  process.env.DEFAULT_CONFIGURATION_DESCRIPTION ||
+  '包含内部办公系统的标准配置（新用户注册时自动应用）';
 
-export const DEFAULT_CONFIGURATION_DATA: ConfigurationData = {
+const FALLBACK_CONFIGURATION_DATA: ConfigurationData = {
   groups: [
     {
       name: '内部办公',
@@ -70,6 +73,28 @@ export const DEFAULT_CONFIGURATION_DATA: ConfigurationData = {
     }
   ]
 };
+
+const loadDefaultConfigurationData = (): ConfigurationData => {
+  const raw = process.env.DEFAULT_CONFIGURATION_JSON;
+  if (!raw) {
+    return FALLBACK_CONFIGURATION_DATA;
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as ConfigurationData;
+    if (parsed && Array.isArray(parsed.groups) && Array.isArray(parsed.links)) {
+      return parsed;
+    }
+  } catch (error) {
+    console.warn('DEFAULT_CONFIGURATION_JSON is invalid. Using fallback defaults.', error);
+    return FALLBACK_CONFIGURATION_DATA;
+  }
+
+  console.warn('DEFAULT_CONFIGURATION_JSON is missing required fields. Using fallback defaults.');
+  return FALLBACK_CONFIGURATION_DATA;
+};
+
+export const DEFAULT_CONFIGURATION_DATA = loadDefaultConfigurationData();
 
 const ensureAdminUserId = async (): Promise<number> => {
   const adminUserId = await UserService.getFirstAdminUserId();

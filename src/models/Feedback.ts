@@ -27,7 +27,11 @@ export class FeedbackService {
     const result = await executeQuery<{ insertId: number }>(query, [userId, type, message]);
     const insertedId = (result as any).insertId;
     const rows = await executeQuery<FeedbackRow>('SELECT * FROM user_feedback WHERE id = ?', [insertedId]);
-    return mapFeedbackRow(rows[0]);
+    const row = rows[0];
+    if (!row) {
+      throw new Error('Failed to load inserted feedback');
+    }
+    return mapFeedbackRow(row);
   }
 
   static async listFeedback(query: FeedbackQuery): Promise<{ items: FeedbackListItem[]; total: number }> {
