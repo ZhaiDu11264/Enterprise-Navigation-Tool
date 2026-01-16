@@ -1,9 +1,0 @@
-export { default as AdminPanel } from './AdminPanel';
-export { default as UserManagement } from './UserManagement';
-export { default as UserModal } from './UserModal';
-export { default as ConfigurationManagement } from './ConfigurationManagement';
-export { default as ConfigurationModal } from './ConfigurationModal';
-export { default as PublishModal } from './PublishModal';
-export { default as SystemMonitoring } from './SystemMonitoring';
-export { default as ImportExport } from './ImportExport';
-export { default as NotificationsPanel } from './NotificationsPanel';

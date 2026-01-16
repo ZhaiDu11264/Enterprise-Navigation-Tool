@@ -125,8 +125,7 @@ body.theme-dark .feedback-btn {
   color: white;
   border-radius: 999px;
   font-size: 0.7rem;
-  padding: 0.1rem 0.4rem;
-  line-height: 40;
+  padding: 0.1rem 0.1rem;
 }
 
 .notification-dropdown {
