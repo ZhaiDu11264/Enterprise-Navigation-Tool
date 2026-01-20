@@ -3,6 +3,7 @@ import { body, validationResult } from 'express-validator';
 import { UserService } from '../models/User';
 import { ConfigurationService } from '../models/DefaultConfiguration';
 import { JWTService } from '../utils/jwt';
+import config from '../config/environment';
 import { authenticateToken } from '../middleware/auth';
 import { logAudit } from '../utils/audit';
 
@@ -96,7 +97,7 @@ router.post('/login', [
           lastLoginAt: authResult.user.lastLoginAt
         },
         token: tokenResult.token,
-        expiresIn: '24h'
+        expiresIn: config.jwtExpiresIn
       },
       timestamp: new Date().toISOString()
     });
@@ -255,7 +256,7 @@ router.post('/refresh', authenticateToken, async (req: Request, res: Response): 
       success: true,
       data: {
         token: refreshResult.token,
-        expiresIn: '24h'
+        expiresIn: config.jwtExpiresIn
       },
       timestamp: new Date().toISOString()
     });

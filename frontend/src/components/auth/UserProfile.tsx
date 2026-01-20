@@ -5,7 +5,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { LogoutButton } from './LogoutButton';
 import { API_BASE_URL } from '../../services/api';
 import { userService } from '../../services/userService';
-import notificationService, { UserNotification } from '../../services/notificationService';
 import './UserProfile.css';
 
 interface UserProfileProps {
@@ -26,9 +25,6 @@ export function UserProfile({ showLogout = true, compact = false }: UserProfileP
       displayNameHint: 'Shown in the header and profile',
       avatar: 'Avatar',
       uploadAvatar: 'Upload avatar',
-      notifications: 'Notifications',
-      notificationsEmpty: 'No notifications yet.',
-      notificationsLoading: 'Loading notifications...',
       quickImportExport: 'Quick Import/Export',
       importCsv: 'Import CSV',
       importSelect: 'Choose CSV',
@@ -39,8 +35,6 @@ export function UserProfile({ showLogout = true, compact = false }: UserProfileP
       importFailed: 'Import failed. Please check the file.',
       exportFailed: 'Export failed. Please try again.',
       importErrorSummary: (count: number, summary: string) => `${count} failed: ${summary}`,
-      markRead: 'Mark read',
-      unread: 'Unread',
       save: 'Save',
       cancel: 'Cancel',
       logout: 'Log out'
@@ -55,9 +49,6 @@ export function UserProfile({ showLogout = true, compact = false }: UserProfileP
       displayNameHint: '\u5728\u4e3b\u9875\u548c\u4e2a\u4eba\u8d44\u6599\u4e2d\u663e\u793a',
       avatar: '\u5934\u50cf',
       uploadAvatar: '\u66f4\u6362\u5934\u50cf',
-      notifications: '\u901a\u77e5',
-      notificationsEmpty: '\u6682\u65e0\u901a\u77e5\u3002',
-      notificationsLoading: '\u52a0\u8f7d\u901a\u77e5\u4e2d...',
       quickImportExport: '\u5feb\u901f\u5bfc\u5165/\u5bfc\u51fa',
       importCsv: '\u5bfc\u5165 CSV',
       importSelect: '\u9009\u62e9 CSV',
@@ -68,8 +59,6 @@ export function UserProfile({ showLogout = true, compact = false }: UserProfileP
       importFailed: '\u5bfc\u5165\u5931\u8d25\uff0c\u8bf7\u68c0\u67e5\u6587\u4ef6\u3002',
       exportFailed: '\u5bfc\u51fa\u5931\u8d25\uff0c\u8bf7\u91cd\u8bd5\u3002',
       importErrorSummary: (count: number, summary: string) => `${count} \u6761\u5931\u8d25\uff1a${summary}`,
-      markRead: '\u6807\u8bb0\u5df2\u8bfb',
-      unread: '\u672a\u8bfb',
       save: '\u4fdd\u5b58',
       cancel: '\u53d6\u6d88',
       logout: '\u9000\u51fa\u767b\u5f55'
@@ -82,8 +71,6 @@ export function UserProfile({ showLogout = true, compact = false }: UserProfileP
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [notifications, setNotifications] = useState<UserNotification[]>([]);
-  const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importLoading, setImportLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
@@ -112,23 +99,6 @@ export function UserProfile({ showLogout = true, compact = false }: UserProfileP
     setImportError(null);
   }, [isModalOpen, resolvedDisplayName, userId, userAvatarUrl]);
 
-  useEffect(() => {
-    if (!isModalOpen) {
-      return;
-    }
-    const loadNotifications = async () => {
-      try {
-        setNotificationsLoading(true);
-        const data = await notificationService.getNotifications();
-        setNotifications(data);
-      } catch (error) {
-        console.warn('Failed to load notifications:', error);
-      } finally {
-        setNotificationsLoading(false);
-      }
-    };
-    loadNotifications();
-  }, [isModalOpen]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -268,19 +238,6 @@ export function UserProfile({ showLogout = true, compact = false }: UserProfileP
     }
   };
 
-  const handleMarkRead = async (notificationId: number) => {
-    try {
-      await notificationService.markAsRead(notificationId);
-      setNotifications(prev =>
-        prev.map(item =>
-          item.id === notificationId ? { ...item, readAt: new Date().toISOString() } : item
-        )
-      );
-    } catch (error) {
-      console.warn('Failed to mark notification read:', error);
-    }
-  };
-
   if (!user) {
     return null;
   }
@@ -329,43 +286,6 @@ export function UserProfile({ showLogout = true, compact = false }: UserProfileP
                 placeholder={resolvedDisplayName}
               />
               <div className="profile-hint">{t.displayNameHint}</div>
-            </div>
-
-            <div className="profile-notifications">
-              <div className="profile-notifications-header">
-                <span>{t.notifications}</span>
-              </div>
-              <div className="profile-notifications-list">
-                {notificationsLoading ? (
-                  <div className="profile-notifications-empty">{t.notificationsLoading}</div>
-                ) : notifications.length === 0 ? (
-                  <div className="profile-notifications-empty">{t.notificationsEmpty}</div>
-                ) : (
-                  notifications.map(item => (
-                    <div
-                      key={item.id}
-                      className={`profile-notification-item ${item.readAt ? 'read' : 'unread'}`}
-                    >
-                      <div className="profile-notification-main">
-                        <div className="profile-notification-title">
-                          {item.title}
-                          {!item.readAt && <span className="profile-notification-badge">{t.unread}</span>}
-                        </div>
-                        <div className="profile-notification-message">{item.message}</div>
-                      </div>
-                      {!item.readAt && (
-                        <button
-                          type="button"
-                          className="profile-notification-action"
-                          onClick={() => handleMarkRead(item.id)}
-                        >
-                          {t.markRead}
-                        </button>
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
             </div>
 
             <div className="profile-import-export">

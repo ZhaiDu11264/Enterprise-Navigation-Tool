@@ -275,11 +275,6 @@
   color: #94a3b8;
 }
 
-.profile-notifications {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
 
 .profile-import-export {
   display: flex;
@@ -404,87 +399,6 @@
   color: #dc2626;
 }
 
-.profile-notifications-header {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #334155;
-}
-
-.profile-notifications-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  max-height: 220px;
-  overflow-y: auto;
-  padding-right: 0.25rem;
-}
-
-.profile-notifications-empty {
-  font-size: 0.85rem;
-  color: #94a3b8;
-  text-align: center;
-  padding: 0.75rem 0;
-}
-
-.profile-notification-item {
-  display: flex;
-  gap: 0.75rem;
-  align-items: flex-start;
-  padding: 0.75rem;
-  border-radius: 10px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-}
-
-.profile-notification-item.unread {
-  border-color: #bfdbfe;
-  background: #eff6ff;
-}
-
-.profile-notification-main {
-  flex: 1;
-  min-width: 0;
-}
-
-.profile-notification-title {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 600;
-  color: #0f172a;
-  margin-bottom: 0.25rem;
-}
-
-.profile-notification-message {
-  font-size: 0.85rem;
-  color: #475569;
-  line-height: 1.4;
-  word-break: break-word;
-}
-
-.profile-notification-badge {
-  font-size: 0.65rem;
-  color: #1d4ed8;
-  background: #dbeafe;
-  padding: 0.1rem 0.4rem;
-  border-radius: 999px;
-  text-transform: uppercase;
-}
-
-.profile-notification-action {
-  border: none;
-  background: #2563eb;
-  color: white;
-  font-size: 0.75rem;
-  padding: 0.35rem 0.6rem;
-  border-radius: 6px;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.profile-notification-action:hover {
-  background: #1d4ed8;
-}
 
 .profile-modal-footer {
   display: flex;
@@ -552,9 +466,6 @@ body.theme-dark .profile-upload-btn {
   color: #93c5fd;
 }
 
-body.theme-dark .profile-notifications-header {
-  color: #e2e8f0;
-}
 
 body.theme-dark .profile-import-export {
   border-top-color: #1f2937;
@@ -591,32 +502,6 @@ body.theme-dark .profile-import-export-header {
   color: #e2e8f0;
 }
 
-body.theme-dark .profile-notification-item {
-  background: #111827;
-  border-color: #1f2937;
-}
-
-body.theme-dark .profile-notification-item.unread {
-  border-color: #334155;
-  background: #0f172a;
-}
-
-body.theme-dark .profile-notification-title {
-  color: #e2e8f0;
-}
-
-body.theme-dark .profile-notification-message {
-  color: #cbd5f5;
-}
-
-body.theme-dark .profile-notification-badge {
-  background: #1e3a8a;
-  color: #bfdbfe;
-}
-
-body.theme-dark .profile-notification-action {
-  background: #2563eb;
-}
 
 body.theme-dark .profile-btn.secondary {
   background: #1f2937;
