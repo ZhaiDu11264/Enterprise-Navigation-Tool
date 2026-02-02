@@ -103,6 +103,8 @@ export interface CreateGroupRequest {
   name: string;
   description?: string | undefined;
   sortOrder?: number | undefined;
+  isSystemGroup?: boolean;
+  isDeletable?: boolean;
 }
 
 export interface LinkOrder {

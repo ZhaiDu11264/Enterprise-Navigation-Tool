@@ -14,6 +14,7 @@ interface LinkGroupManagerProps {
   onCreateGroup: (groupData: CreateGroupRequest) => Promise<void>;
   onUpdateGroup: (id: number, groupData: UpdateGroupRequest) => Promise<void>;
   onDeleteGroup: (id: number) => Promise<void>;
+  allowSystemGroup?: boolean;
 }
 
 export function LinkGroupManager({
@@ -24,7 +25,8 @@ export function LinkGroupManager({
   onDeleteLink,
   onCreateGroup,
   onUpdateGroup,
-  onDeleteGroup
+  onDeleteGroup,
+  allowSystemGroup = false
 }: LinkGroupManagerProps) {
   // Link modal state
   const [linkModalOpen, setLinkModalOpen] = useState(false);
@@ -132,6 +134,7 @@ export function LinkGroupManager({
         group={selectedGroup}
         mode={groupModalMode}
         existingGroups={groups}
+        allowSystemGroup={allowSystemGroup}
       />
 
       {/* Confirm Dialog */}

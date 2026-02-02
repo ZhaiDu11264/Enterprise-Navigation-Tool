@@ -176,6 +176,14 @@ router.post('/', [
     .trim()
     .isLength({ max: 1000 })
     .withMessage('Description must not exceed 1000 characters'),
+  body('isSystemGroup')
+    .optional()
+    .isBoolean()
+    .withMessage('isSystemGroup must be a boolean'),
+  body('isDeletable')
+    .optional()
+    .isBoolean()
+    .withMessage('isDeletable must be a boolean'),
   body('sortOrder')
     .optional()
     .isInt({ min: 0 })
@@ -208,7 +216,22 @@ router.post('/', [
       return;
     }
 
-    const { name, description, sortOrder } = req.body;
+    const { name, description, sortOrder, isSystemGroup: requestedSystemGroup, isDeletable: requestedDeletable } = req.body;
+
+    if (requestedSystemGroup && req.user.role !== 'admin') {
+      res.status(403).json({
+        error: {
+          code: 'INSUFFICIENT_PERMISSIONS',
+          message: 'Only administrators can create system groups',
+          timestamp: new Date().toISOString(),
+          requestId: getRequestId(req)
+        }
+      });
+      return;
+    }
+
+    const isSystemGroup = req.user.role === 'admin' && Boolean(requestedSystemGroup);
+    const isDeletable = isSystemGroup ? false : (requestedDeletable !== undefined ? Boolean(requestedDeletable) : true);
 
     // Check if group name already exists for this user
     const existingGroup = await GroupService.getGroupByName(req.user!.userId, name);
@@ -227,7 +250,9 @@ router.post('/', [
     const newGroup = await GroupService.createGroup(req.user!.userId, {
       name,
       description,
-      sortOrder
+      sortOrder,
+      isSystemGroup,
+      isDeletable
     });
 
     await logAudit(req, {

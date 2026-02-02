@@ -357,6 +357,7 @@ export class LinkService {
   }
 
   // Auto-sync admin changes to default configuration
+
   static async autoSyncToDefaultConfig(userId: number, updatedLink: WebsiteLink): Promise<void> {
     try {
       // Only sync if user is admin and link is a system link
@@ -368,7 +369,7 @@ export class LinkService {
         return; // Skip sync for non-admin users or non-system links
       }
 
-      console.log(`🔄 Auto-syncing admin change to default config: ${updatedLink.name}`);
+      console.log(`Auto-syncing admin change to default config: ${updatedLink.name}`);
 
       // Import ConfigurationService to avoid circular dependency
       const { ConfigurationService } = await import('./DefaultConfiguration');
@@ -380,27 +381,63 @@ export class LinkService {
         return;
       }
 
-      // Find and update the corresponding link in default configuration
       const configData = activeConfig.configData;
-      const linkToUpdate = configData.links.find(link => link.name === updatedLink.name);
-      
-      if (linkToUpdate) {
-        // Update all relevant link data fields
-        linkToUpdate.url = updatedLink.url;
-        linkToUpdate.description = updatedLink.description || undefined;
-        linkToUpdate.iconUrl = updatedLink.iconUrl || undefined;
-        linkToUpdate.sortOrder = updatedLink.sortOrder;
-        linkToUpdate.isSystemLink = updatedLink.isSystemLink;
-        linkToUpdate.isDeletable = updatedLink.isDeletable;
-        
-        // Update the configuration in database
-        await executeQuery(
-          'UPDATE default_configurations SET config_data = ?, version = version + 1, updated_at = NOW() WHERE id = ?',
-          [JSON.stringify(configData), activeConfig.id]
-        );
-        
-        console.log(`✅ Auto-synced all fields for ${updatedLink.name} to default config (new version: ${activeConfig.version + 1})`);
+      const groupQuery = 'SELECT name, description, sort_order, is_system_group, is_deletable FROM `groups` WHERE id = ?';
+      const groupRows = await executeQuery<{
+        name: string;
+        description: string | null;
+        sort_order: number;
+        is_system_group: number | boolean;
+        is_deletable: number | boolean;
+      }>(groupQuery, [updatedLink.groupId]);
+      const groupRow = groupRows[0];
+      const groupName = groupRow?.name;
+
+      if (groupName) {
+        const normalize = (value: string) => value.trim().toLowerCase();
+        const normalizedName = normalize(groupName);
+        const existingGroup = configData.groups.find(group => normalize(group.name) === normalizedName);
+        if (!existingGroup) {
+          configData.groups.push({
+            name: groupName,
+            description: groupRow.description || undefined,
+            sortOrder: groupRow.sort_order,
+            isSystemGroup: Boolean(groupRow.is_system_group),
+            isDeletable: Boolean(groupRow.is_deletable)
+          });
+        }
       }
+
+      const linkToUpdate = configData.links.find(link => link.name === updatedLink.name);
+      const linkPayload = {
+        name: updatedLink.name,
+        url: updatedLink.url,
+        description: updatedLink.description || undefined,
+        iconUrl: updatedLink.iconUrl || undefined,
+        groupName: groupName || 'Ungrouped',
+        sortOrder: updatedLink.sortOrder,
+        isSystemLink: updatedLink.isSystemLink,
+        isDeletable: updatedLink.isDeletable
+      };
+
+      if (linkToUpdate) {
+        linkToUpdate.url = linkPayload.url;
+        linkToUpdate.description = linkPayload.description;
+        linkToUpdate.iconUrl = linkPayload.iconUrl;
+        linkToUpdate.groupName = linkPayload.groupName;
+        linkToUpdate.sortOrder = linkPayload.sortOrder;
+        linkToUpdate.isSystemLink = linkPayload.isSystemLink;
+        linkToUpdate.isDeletable = linkPayload.isDeletable;
+      } else {
+        configData.links.push(linkPayload);
+      }
+
+      await executeQuery(
+        'UPDATE default_configurations SET config_data = ?, version = version + 1, updated_at = NOW() WHERE id = ?',
+        [JSON.stringify(configData), activeConfig.id]
+      );
+      
+      console.log(`Auto-synced ${updatedLink.name} to default config (new version: ${activeConfig.version + 1})`);
       
     } catch (error) {
       console.error('Auto-sync to default config failed:', error);

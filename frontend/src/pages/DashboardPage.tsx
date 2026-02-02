@@ -668,6 +668,7 @@ export function DashboardPage() {
         group={selectedGroup || undefined}
         mode={groupModalMode}
         existingGroups={groups}
+        allowSystemGroup={allowSystemEdit}
       />
 
       <LinkModal

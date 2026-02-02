@@ -100,6 +100,8 @@ export interface Group {
 export interface CreateGroupRequest {
   name: string;
   description?: string;
+  isSystemGroup?: boolean;
+  isDeletable?: boolean;
 }
 
 export interface UpdateGroupRequest extends Partial<CreateGroupRequest> {}

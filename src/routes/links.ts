@@ -3,6 +3,7 @@ import { body, param, query, validationResult } from 'express-validator';
 import { authenticateToken } from '../middleware/auth';
 import { LinkService } from '../models/WebsiteLink';
 import { ConfigurationService } from '../models/DefaultConfiguration';
+import { GroupService } from '../models/Group';
 import { logAudit } from '../utils/audit';
 
 const router = Router();
@@ -116,14 +117,27 @@ router.post('/', [
     }
 
     const { name, url, description, iconUrl, groupId, sortOrder } = req.body;
+    const parsedGroupId = parseInt(groupId, 10);
+    let isSystemLink = false;
+    let isDeletable: boolean | undefined;
+
+    if (req.user.role === 'admin') {
+      const group = await GroupService.getGroupById(parsedGroupId);
+      if (group && group.userId === req.user.userId && group.isSystemGroup) {
+        isSystemLink = true;
+        isDeletable = false;
+      }
+    }
 
     const link = await LinkService.createLink(req.user.userId, {
       name,
       url,
       description,
       iconUrl,
-      groupId: parseInt(groupId, 10),
-      sortOrder
+      groupId: parsedGroupId,
+      sortOrder,
+      isSystemLink,
+      ...(isDeletable !== undefined ? { isDeletable } : {})
     });
 
     await logAudit(req, {

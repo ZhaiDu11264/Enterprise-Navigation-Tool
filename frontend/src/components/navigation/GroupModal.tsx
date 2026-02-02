@@ -10,6 +10,7 @@ interface GroupModalProps {
   group?: Group | null;
   mode: 'create' | 'edit';
   existingGroups: Group[];
+  allowSystemGroup?: boolean;
 }
 
 export function GroupModal({ 
@@ -18,7 +19,8 @@ export function GroupModal({
   onSave, 
   group, 
   mode, 
-  existingGroups 
+  existingGroups,
+  allowSystemGroup = false
 }: GroupModalProps) {
   const { language } = useLanguage();
   const translations = {
@@ -31,6 +33,8 @@ export function GroupModal({
       descriptionPlaceholder: 'Optional description for this group',
       hintName: 'Choose a descriptive name for organizing your links',
       hintCount: (count: number) => `${count}/500 characters`,
+      systemGroupLabel: 'Fixed group (visible to all users)',
+      systemGroupHint: 'System groups are shared and cannot be deleted by regular users.',
       cancel: 'Cancel',
       saving: 'Saving...',
       create: 'Create Group',
@@ -51,6 +55,8 @@ export function GroupModal({
       descriptionPlaceholder: '\u8be5\u5206\u7ec4\u7684\u9009\u586b\u63cf\u8ff0',
       hintName: '\u9009\u62e9\u4e00\u4e2a\u5bb9\u6613\u8bc6\u522b\u7684\u5206\u7ec4\u540d\u79f0',
       hintCount: (count: number) => `${count}/500 \u5b57`,
+      systemGroupLabel: '\u56fa\u5b9a\u5206\u7ec4\uff08\u5168\u5458\u53ef\u89c1\uff09',
+      systemGroupHint: '\u7cfb\u7edf\u5206\u7ec4\u4f1a\u540c\u6b65\u7ed9\u6240\u6709\u7528\u6237\uff0c\u666e\u901a\u7528\u6237\u65e0\u6cd5\u5220\u9664\u3002',
       cancel: '\u53d6\u6d88',
       saving: '\u4fdd\u5b58\u4e2d...',
       create: '\u521b\u5efa\u5206\u7ec4',
@@ -66,7 +72,8 @@ export function GroupModal({
   const t = translations[language];
   const [formData, setFormData] = useState({
     name: '',
-    description: ''
+    description: '',
+    isSystemGroup: false
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(false);
@@ -80,12 +87,14 @@ export function GroupModal({
       if (mode === 'edit' && group) {
         setFormData({
           name: group.name,
-          description: group.description || ''
+          description: group.description || '',
+          isSystemGroup: Boolean(group.isSystemGroup)
         });
       } else {
         setFormData({
           name: '',
-          description: ''
+          description: '',
+          isSystemGroup: false
         });
       }
       setErrors({});
@@ -186,10 +195,14 @@ export function GroupModal({
 
     setLoading(true);
     try {
-      const groupData = {
+      const groupData: CreateGroupRequest | UpdateGroupRequest = {
         name: formData.name.trim(),
         description: formData.description.trim() || undefined
       };
+      if (allowSystemGroup && mode === 'create' && formData.isSystemGroup) {
+        groupData.isSystemGroup = true;
+        groupData.isDeletable = false;
+      }
 
       await onSave(groupData);
       onClose();
@@ -251,6 +264,23 @@ export function GroupModal({
               {t.hintCount(formData.description.length)}
             </div>
           </div>
+
+          {allowSystemGroup && mode === 'create' && (
+            <div className="form-group">
+              <label className="checkbox">
+                <input
+                  type="checkbox"
+                  name="isSystemGroup"
+                  checked={formData.isSystemGroup}
+                  onChange={(event) =>
+                    setFormData(prev => ({ ...prev, isSystemGroup: event.target.checked }))
+                  }
+                />
+                {t.systemGroupLabel}
+              </label>
+              <div className="field-hint">{t.systemGroupHint}</div>
+            </div>
+          )}
 
           {errors.submit && (
             <div className="form-group">

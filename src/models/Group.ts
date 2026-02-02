@@ -47,6 +47,9 @@ export class GroupService {
       throw new Error('Failed to create group');
     }
     
+    // Auto-sync system groups created by admin to default configuration
+    await this.autoSyncToDefaultConfig(userId, createdGroup);
+
     return createdGroup;
   }
 
@@ -222,5 +225,57 @@ export class GroupService {
       ...mapGroupRowToGroup(row),
       linkCount: row.link_count
     }));
+  }
+
+  // Auto-sync admin system group to default configuration
+  static async autoSyncToDefaultConfig(userId: number, group: Group): Promise<void> {
+    try {
+      const userQuery = 'SELECT role FROM users WHERE id = ?';
+      const userResult = await executeQuery<{ role: string }>(userQuery, [userId]);
+      const userRow = userResult[0];
+
+      if (!userRow || userRow.role !== 'admin' || !group.isSystemGroup) {
+        return;
+      }
+
+      const { ConfigurationService } = await import('./DefaultConfiguration');
+      const activeConfig = await ConfigurationService.getActiveConfiguration();
+      if (!activeConfig) {
+        console.warn('No active configuration found for system group sync');
+        return;
+      }
+
+      const configData = activeConfig.configData;
+      const normalize = (value: string) => value.trim().toLowerCase();
+      const normalizedName = normalize(group.name);
+      const existingGroup = configData.groups.find(item => normalize(item.name) === normalizedName);
+      let hasChanges = false;
+
+      if (existingGroup) {
+        existingGroup.description = group.description || undefined;
+        existingGroup.sortOrder = group.sortOrder;
+        existingGroup.isSystemGroup = true;
+        existingGroup.isDeletable = group.isDeletable;
+        hasChanges = true;
+      } else {
+        configData.groups.push({
+          name: group.name,
+          description: group.description || undefined,
+          sortOrder: group.sortOrder,
+          isSystemGroup: true,
+          isDeletable: group.isDeletable
+        });
+        hasChanges = true;
+      }
+
+      if (hasChanges) {
+        await executeQuery(
+          'UPDATE default_configurations SET config_data = ?, version = version + 1, updated_at = NOW() WHERE id = ?',
+          [JSON.stringify(configData), activeConfig.id]
+        );
+      }
+    } catch (error) {
+      console.error('Auto-sync system group failed:', error);
+    }
   }
 }

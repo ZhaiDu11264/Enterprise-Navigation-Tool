@@ -190,10 +190,36 @@ export class ConfigurationService {
       let group;
       
       if (strategy === 'merge') {
-        // Check if group already exists
-        group = await GroupService.getGroupByName(userId, groupData.name);
+        // Check if group already exists (case/whitespace insensitive, include inactive)
+        const existingRows = await executeQuery<{
+          id: number;
+          is_active: number | boolean;
+        }>(
+          'SELECT id, is_active FROM `groups` WHERE user_id = ? AND TRIM(LOWER(name)) = TRIM(LOWER(?)) ORDER BY is_active DESC, id ASC LIMIT 1',
+          [userId, groupData.name]
+        );
+        const existingRow = existingRows[0];
+        if (existingRow) {
+          const isActive = Boolean(existingRow.is_active);
+          // Restore/update existing group to avoid duplicates
+          await executeQuery(
+            `UPDATE \`groups\`
+             SET name = ?, description = ?, sort_order = ?, is_system_group = ?, is_deletable = ?, is_active = true, updated_at = CURRENT_TIMESTAMP
+             WHERE id = ? AND user_id = ?`,
+            [
+              groupData.name,
+              groupData.description ?? null,
+              groupData.sortOrder ?? 0,
+              groupData.isSystemGroup || false,
+              groupData.isDeletable !== undefined ? groupData.isDeletable : true,
+              existingRow.id,
+              userId
+            ]
+          );
+          group = await GroupService.getGroupById(existingRow.id);
+        }
       }
-      
+
       if (!group) {
         // Create new group
         group = await GroupService.createGroup(userId, {

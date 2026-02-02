@@ -27,6 +27,20 @@
   margin-bottom: 20px;
 }
 
+/* Checkbox styling */
+.group-modal-content .checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+.group-modal-content .checkbox input {
+  width: 16px;
+  height: 16px;
+}
+
 /* Enhanced Input Styles */
 .group-modal-content input[type="text"],
 .group-modal-content textarea {
