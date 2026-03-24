@@ -31,13 +31,17 @@ export function SearchPage() {
       title: 'Site Search',
       back: 'Back to dashboard',
       groupsTitle: 'Most relevant groups',
-      linksTitle: 'Most relevant links'
+      linksTitle: 'Most relevant links',
+      ungrouped: 'Ungrouped',
+      internalSearchEngine: 'Site'
     },
     zh: {
       title: '\u7ad9\u5185\u641c\u7d22',
       back: '\u8fd4\u56de\u4e3b\u9875',
       groupsTitle: '\u6700\u76f8\u5173\u5206\u7ec4',
-      linksTitle: '\u6700\u76f8\u5173\u94fe\u63a5'
+      linksTitle: '\u6700\u76f8\u5173\u94fe\u63a5',
+      ungrouped: '\u672a\u5206\u7ec4',
+      internalSearchEngine: '\u7ad9\u5185'
     }
   } as const;
   const t = translations[language];
@@ -96,7 +100,7 @@ export function SearchPage() {
     return Array.from(grouped.entries())
       .map(([groupId, links]) => {
         const group = groupMap.get(groupId);
-        const name = group?.name || '\u672a\u5206\u7ec4';
+        const name = group?.name || t.ungrouped;
         return { groupId, name, links };
       })
       .sort((a, b) => {
@@ -106,7 +110,7 @@ export function SearchPage() {
         return a.name.localeCompare(b.name);
       })
       .slice(0, 6);
-  }, [groups, results]);
+  }, [groups, results, t.ungrouped]);
 
   const handleQueryChange = (value: string) => {
     setSearchParams(value ? { q: value } : {});
@@ -160,7 +164,7 @@ export function SearchPage() {
           centered={true}
           showSearchEngines={true}
           initialQuery={queryParam}
-          initialEngineName={'\u7ad9\u5185'}
+          initialEngineName={t.internalSearchEngine}
         />
       </div>
 

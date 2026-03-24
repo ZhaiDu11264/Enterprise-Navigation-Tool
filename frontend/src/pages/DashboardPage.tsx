@@ -1,9 +1,9 @@
-﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { UserProfile } from '../components/auth';
 import { NavigationView, GroupModal, LinkModal, Sidebar } from '../components/navigation';
-import { ModernSearchBar } from '../components/navigation/ModernSearchBar';
-import { SettingsModal, useNotifications, Footer, ScrollToTop, FeedbackModal, NotificationModal } from '../components/common';
+import { SearchInterface } from '../components/navigation/SearchInterface';
+import { SettingsModal, useNotifications, ScrollToTop, FeedbackModal, NotificationModal } from '../components/common';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSettings } from '../contexts/SettingsContext';
@@ -18,8 +18,9 @@ import {
 } from '../types';
 import { linkService } from '../services/linkService';
 import { groupService } from '../services/groupService';
-import notificationService, { UserNotification } from '../services/notificationService';
+import notificationService from '../services/notificationService';
 import { api } from '../services/api';
+import lakeBackground from '../assets/difusionastrouc-lake-6295829_1920.jpg';
 import './DashboardPage.css';
 
 export function DashboardPage() {
@@ -28,7 +29,7 @@ export function DashboardPage() {
   const { user } = useAuth();
   const { language, setLanguage } = useLanguage();
   const { gridSize, setGridSize } = useSettings();
-  const { darkMode, setDarkMode, compactMode, setCompactMode, transparentMode, setTransparentMode } = useSettings();
+  const { darkMode, setDarkMode, compactMode, setCompactMode } = useSettings();
   const [groups, setGroups] = useState<Group[]>([]);
   const [links, setLinks] = useState<WebsiteLink[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,14 +45,10 @@ export function DashboardPage() {
   const [groupModalOpen, setGroupModalOpen] = useState(false);
   const [groupModalMode, setGroupModalMode] = useState<'create' | 'edit'>('create');
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
-
-  const [notificationPreviewOpen, setNotificationPreviewOpen] = useState(false);
-  const [notificationItems, setNotificationItems] = useState<UserNotification[]>([]);
   const [notificationUnreadCount, setNotificationUnreadCount] = useState(0);
-  const [notificationLoading, setNotificationLoading] = useState(false);
-  const notificationRef = useRef<HTMLDivElement>(null);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [notificationModalOpen, setNotificationModalOpen] = useState(false);
+  const hotGroupEnsuredRef = useRef(false);
 
   const initialGroupParam = searchParams.get('groupId');
   const initialGroupId = initialGroupParam ? Number(initialGroupParam) : null;
@@ -73,7 +70,6 @@ export function DashboardPage() {
       settingsTitle: 'Settings',
       darkMode: 'Dark mode',
       compactMode: 'Compact view',
-      transparentMode: 'Transparent mode',
       language: 'Language',
       gridSize: 'Icon Size',
       gridSizeSmall: 'Small (More per row)',
@@ -128,75 +124,74 @@ export function DashboardPage() {
         visits: 'visits'
       }
     },
-    zh: {
-      title: '企业网址导航',
-      addLink: '添加链接',
-      addGroup: '添加分组',
-      adminTools: '管理工具',
-      settings: '设置',
-      viewGrid: '切换到卡片视图',
-      viewList: '切换到列表视图',
-      groupLayoutTabs: '切换到分组标签',
-      groupLayoutList: '切换到分组列表',
-      groupsLabel: '全部',
-      collapseGroups: '折叠分组',
-      expandGroups: '展开分组',
-      settingsTitle: '设置',
-      darkMode: '深色模式',
-      compactMode: '紧凑显示',
-      transparentMode: '通透模式',
-      language: '语言',
-      gridSize: '图标大小',
-      gridSizeSmall: '小(每行更多)',
-      gridSizeMedium: '中(默认)',
-      gridSizeLarge: '大(每行更少)',
-      gridSizeExtraLarge: '特大(每行最少)',
-      english: '英文',
-      chinese: '中文',
-      close: '关闭',
-      notificationsLabel: '通知',
-      notificationsCenter: '通知中心',
-      notificationsClear: '清空全部',
-      notificationsDelete: '删除',
-      feedbackLabel: '反馈',
-      notificationsEmpty: '暂无通知。',
-      notificationsLoading: '加载通知中...',
-      markRead: '标记已读',
-      errorTitle: '错误',
-      retry: '重试',
+        zh: {
+      title: '\u4f01\u4e1a\u7f51\u5740\u5bfc\u822a',
+      addLink: '\u6dfb\u52a0\u94fe\u63a5',
+      addGroup: '\u6dfb\u52a0\u5206\u7ec4',
+      adminTools: '\u7ba1\u7406\u5de5\u5177',
+      settings: '\u8bbe\u7f6e',
+      viewGrid: '\u5207\u6362\u5230\u5361\u7247\u89c6\u56fe',
+      viewList: '\u5207\u6362\u5230\u5217\u8868\u89c6\u56fe',
+      groupLayoutTabs: '\u5207\u6362\u5230\u5206\u7ec4\u6807\u7b7e',
+      groupLayoutList: '\u5207\u6362\u5230\u5206\u7ec4\u5217\u8868',
+      groupsLabel: '\u5168\u90e8',
+      collapseGroups: '\u6298\u53e0\u5206\u7ec4',
+      expandGroups: '\u5c55\u5f00\u5206\u7ec4',
+      settingsTitle: '\u8bbe\u7f6e',
+      darkMode: '\u6df1\u8272\u6a21\u5f0f',
+      compactMode: '\u7d27\u51d1\u663e\u793a',
+      language: '\u8bed\u8a00',
+      gridSize: '\u56fe\u6807\u5927\u5c0f',
+      gridSizeSmall: '\u5c0f(\u6bcf\u884c\u66f4\u591a)',
+      gridSizeMedium: '\u4e2d(\u9ed8\u8ba4)',
+      gridSizeLarge: '\u5927(\u6bcf\u884c\u66f4\u5c11)',
+      gridSizeExtraLarge: '\u7279\u5927(\u6bcf\u884c\u6700\u5c11)',
+      english: '\u82f1\u6587',
+      chinese: '\u4e2d\u6587',
+      close: '\u5173\u95ed',
+      notificationsLabel: '\u901a\u77e5',
+      notificationsCenter: '\u901a\u77e5\u4e2d\u5fc3',
+      notificationsClear: '\u6e05\u7a7a\u5168\u90e8',
+      notificationsDelete: '\u5220\u9664',
+      feedbackLabel: '\u53cd\u9988',
+      notificationsEmpty: '\u6682\u65e0\u901a\u77e5\u3002',
+      notificationsLoading: '\u52a0\u8f7d\u901a\u77e5\u4e2d...',
+      markRead: '\u6807\u8bb0\u5df2\u8bfb',
+      errorTitle: '\u9519\u8bef',
+      retry: '\u91cd\u8bd5',
       notifications: {
-        linkAddedTitle: '链接已添加',
-        linkAddedMessage: (name: string) => `"${name}" 已添加。`,
-        linkUpdatedTitle: '链接已更新',
-        linkUpdatedMessage: (name: string) => `"${name}" 已更新。`,
-        groupCreatedTitle: '分组已创建',
-        groupCreatedMessage: (name: string) => `"${name}" 已添加。`,
-        groupUpdatedTitle: '分组已更新',
-        groupUpdatedMessage: (name: string) => `"${name}" 已更新。`
+        linkAddedTitle: '\u94fe\u63a5\u5df2\u6dfb\u52a0',
+        linkAddedMessage: (name: string) => `"${name}" \u5df2\u6dfb\u52a0\u3002`,
+        linkUpdatedTitle: '\u94fe\u63a5\u5df2\u66f4\u65b0',
+        linkUpdatedMessage: (name: string) => `"${name}" \u5df2\u66f4\u65b0\u3002`,
+        groupCreatedTitle: '\u5206\u7ec4\u5df2\u521b\u5efa',
+        groupCreatedMessage: (name: string) => `"${name}" \u5df2\u6dfb\u52a0\u3002`,
+        groupUpdatedTitle: '\u5206\u7ec4\u5df2\u66f4\u65b0',
+        groupUpdatedMessage: (name: string) => `"${name}" \u5df2\u66f4\u65b0\u3002`
       },
       confirms: {
-        deleteLink: (name: string) => `确认删除“${name}”？`,
-        deleteGroup: (name: string) => `确认删除分组“${name}”？`
+        deleteLink: (name: string) => `\u786e\u8ba4\u5220\u9664\u201c${name}\u201d\uff1f`,
+        deleteGroup: (name: string) => `\u786e\u8ba4\u5220\u9664\u5206\u7ec4\u201c${name}\u201d\uff1f`
       },
       errors: {
-        loadFailed: '加载导航数据失败，请刷新重试。',
-        saveLinkFailedTitle: '保存链接失败',
-        saveLinkFailedMessage: '请重试。',
-        saveGroupFailedTitle: '保存分组失败',
-        saveGroupFailedMessage: '请重试。',
-        openLinkFailed: '打开链接失败。',
-        toggleFavoriteFailed: '切换收藏失败。',
-        deleteLinkFailed: '删除链接失败。',
-        deleteGroupFailed: '删除分组失败。',
-        reorderLinksFailed: '链接排序失败。',
-        reorderGroupsFailed: '分组排序失败。'
+        loadFailed: '\u52a0\u8f7d\u5bfc\u822a\u6570\u636e\u5931\u8d25\uff0c\u8bf7\u5237\u65b0\u91cd\u8bd5\u3002',
+        saveLinkFailedTitle: '\u4fdd\u5b58\u94fe\u63a5\u5931\u8d25',
+        saveLinkFailedMessage: '\u8bf7\u91cd\u8bd5\u3002',
+        saveGroupFailedTitle: '\u4fdd\u5b58\u5206\u7ec4\u5931\u8d25',
+        saveGroupFailedMessage: '\u8bf7\u91cd\u8bd5\u3002',
+        openLinkFailed: '\u6253\u5f00\u94fe\u63a5\u5931\u8d25\u3002',
+        toggleFavoriteFailed: '\u5207\u6362\u6536\u85cf\u5931\u8d25\u3002',
+        deleteLinkFailed: '\u5220\u9664\u94fe\u63a5\u5931\u8d25\u3002',
+        deleteGroupFailed: '\u5220\u9664\u5206\u7ec4\u5931\u8d25\u3002',
+        reorderLinksFailed: '\u94fe\u63a5\u6392\u5e8f\u5931\u8d25\u3002',
+        reorderGroupsFailed: '\u5206\u7ec4\u6392\u5e8f\u5931\u8d25\u3002'
       },
       sidebar: {
-        mostVisited: '最常访问',
-        favorites: '收藏夹',
-        noMostVisited: '暂无访问记录',
-        noFavorites: '暂无收藏',
-        visits: '次'
+        mostVisited: '\u6700\u5e38\u8bbf\u95ee',
+        favorites: '\u6536\u85cf\u5939',
+        noMostVisited: '\u6682\u65e0\u8bbf\u95ee\u8bb0\u5f55',
+        noFavorites: '\u6682\u65e0\u6536\u85cf',
+        visits: '\u6b21'
       }
     }
   } as const;
@@ -205,25 +200,57 @@ export function DashboardPage() {
   const allowSystemEdit = user?.role === 'admin';
   const userId = user?.id ?? null;
 
+  const HOT_GROUP_ZH = '热门推荐';
+  const HOT_GROUP_EN = 'Trending';
+  const HOT_SEED_KEY = 'ui_hot_recommended_seeded_v1';
+  const hotLinksEnsuredRef = useRef(false);
+
+  const faviconUrlFor = (url: string) => {
+    try {
+      const domain = new URL(url).hostname;
+      return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128`;
+    } catch {
+      return undefined;
+    }
+  };
+
+  const recommendedSeedSites = useMemo(() => ([
+    { name: '百度', url: 'https://www.baidu.com' },
+    { name: '知乎', url: 'https://www.zhihu.com' },
+    { name: '微信', url: 'https://weixin.qq.com' },
+    { name: '哔哩哔哩', url: 'https://www.bilibili.com' },
+    { name: '抖音', url: 'https://www.douyin.com' },
+    { name: '百度网盘', url: 'https://pan.baidu.com' },
+    { name: '淘宝', url: 'https://www.taobao.com' },
+    { name: '京东', url: 'https://www.jd.com' }
+  ]), []);
+
+  const refreshConfigIfNeeded = useCallback(async () => {
+    if (user?.role === 'admin') {
+      return false;
+    }
+    try {
+      const statusResponse = await api.get('/config/status');
+      const currentVersion = statusResponse.data.data.status.version as number;
+      const cachedVersion = Number(sessionStorage.getItem('configVersion') || '0');
+      const shouldRefresh = !Number.isFinite(cachedVersion) || currentVersion > cachedVersion;
+      if (shouldRefresh) {
+        await api.post('/config/refresh');
+        sessionStorage.setItem('configVersion', String(currentVersion));
+        return true;
+      }
+    } catch (syncError) {
+      console.warn('Failed to refresh config:', syncError);
+    }
+    return false;
+  }, [user?.role]);
+
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
-      if (user?.role !== 'admin') {
-        try {
-          const statusResponse = await api.get('/config/status');
-          const currentVersion = statusResponse.data.data.status.version as number;
-          const cachedVersion = Number(sessionStorage.getItem('configVersion') || '0');
-          const shouldRefresh = !Number.isFinite(cachedVersion) || currentVersion > cachedVersion;
-          if (shouldRefresh) {
-            await api.post('/config/refresh');
-            sessionStorage.setItem('configVersion', String(currentVersion));
-          }
-        } catch (syncError) {
-          console.warn('配置同步失败（可能没有默认配置）:', syncError);
-        }
-      }
+      await refreshConfigIfNeeded();
 
       linkService.clearCache();
 
@@ -240,11 +267,63 @@ export function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [t.errors.loadFailed, user?.role]);
+  }, [t.errors.loadFailed, refreshConfigIfNeeded]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    if (user?.role === 'admin') {
+      return;
+    }
+    const checkAndRefresh = async () => {
+      const refreshed = await refreshConfigIfNeeded();
+      if (refreshed) {
+        loadData();
+      }
+    };
+
+    const interval = setInterval(checkAndRefresh, 30000);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        checkAndRefresh();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [refreshConfigIfNeeded, loadData, user?.role]);
+
+  useEffect(() => {
+    if (!allowSystemEdit || loading || hotGroupEnsuredRef.current) {
+      return;
+    }
+    const existing = groups.find(group =>
+      group.name === HOT_GROUP_ZH || group.name === HOT_GROUP_EN
+    );
+    if (existing) {
+      hotGroupEnsuredRef.current = true;
+      return;
+    }
+    hotGroupEnsuredRef.current = true;
+    groupService.createGroup({
+      name: HOT_GROUP_ZH,
+      description: '',
+      isSystemGroup: true,
+      isDeletable: false
+    }).then((created) => {
+      setGroups(prev => [...prev, created]);
+    }).catch((err) => {
+      console.warn('Failed to create recommended group:', err);
+      hotGroupEnsuredRef.current = false;
+    });
+  }, [allowSystemEdit, groups, loading]);
+
 
   const loadUnreadCount = useCallback(async () => {
     if (!userId) {
@@ -254,23 +333,7 @@ export function DashboardPage() {
       const unread = await notificationService.getNotifications(true);
       setNotificationUnreadCount(unread.length);
     } catch (err) {
-      console.warn('Failed to load notification count:', err);
-    }
-  }, [userId]);
-
-  const loadNotifications = useCallback(async () => {
-    if (!userId) {
-      return;
-    }
-    try {
-      setNotificationLoading(true);
-      const data = await notificationService.getNotifications();
-      setNotificationItems(data);
-      setNotificationUnreadCount(data.filter(item => !item.readAt).length);
-    } catch (err) {
       console.warn('Failed to load notifications:', err);
-    } finally {
-      setNotificationLoading(false);
     }
   }, [userId]);
 
@@ -280,32 +343,9 @@ export function DashboardPage() {
     return () => clearInterval(interval);
   }, [loadUnreadCount]);
 
-  useEffect(() => {
-    if (!notificationPreviewOpen) {
-      return;
-    }
-    loadNotifications();
-  }, [notificationPreviewOpen, loadNotifications]);
-
-  const handleNotificationClick = () => {
-    setNotificationPreviewOpen(false);
+  const handleOpenNotifications = () => {
     setNotificationModalOpen(true);
-  };
-
-  const handleNotificationHover = (open: boolean) => {
-    setNotificationPreviewOpen(open);
-  };
-
-  const handleNotificationRead = async (notificationId: number) => {
-    try {
-      await notificationService.markAsRead(notificationId);
-      setNotificationItems(prev =>
-        prev.map(item => item.id === notificationId ? { ...item, readAt: new Date().toISOString() } : item)
-      );
-      setNotificationUnreadCount(prev => Math.max(prev - 1, 0));
-    } catch (err) {
-      console.warn('Failed to mark notification read:', err);
-    }
+    loadUnreadCount();
   };
 
   const handleLinkClick = async (link: WebsiteLink) => {
@@ -446,6 +486,73 @@ export function DashboardPage() {
     setLinkModalOpen(true);
   };
 
+  const recommendedGroup = useMemo(() => {
+    return groups.find(group => group.name === HOT_GROUP_ZH || group.name === HOT_GROUP_EN) || null;
+  }, [groups]);
+
+  const recommendedLinks = useMemo(() => {
+    if (!recommendedGroup) {
+      return [];
+    }
+    return links.filter(link => Number(link.groupId) === Number(recommendedGroup.id));
+  }, [links, recommendedGroup]);
+
+  const normalGroups = useMemo(() => {
+    if (!recommendedGroup) {
+      return groups;
+    }
+    return groups.filter(group => Number(group.id) !== Number(recommendedGroup.id));
+  }, [groups, recommendedGroup]);
+
+  const normalLinks = useMemo(() => {
+    if (!recommendedGroup) {
+      return links;
+    }
+    return links.filter(link => Number(link.groupId) !== Number(recommendedGroup.id));
+  }, [links, recommendedGroup]);
+
+  useEffect(() => {
+    if (!allowSystemEdit || loading || hotLinksEnsuredRef.current) {
+      return;
+    }
+    if (localStorage.getItem(HOT_SEED_KEY) === 'true') {
+      return;
+    }
+    if (!recommendedGroup) {
+      return;
+    }
+    const existing = links.filter(link => Number(link.groupId) === Number(recommendedGroup.id));
+    if (existing.length > 0) {
+      localStorage.setItem(HOT_SEED_KEY, 'true');
+      hotLinksEnsuredRef.current = true;
+      return;
+    }
+    hotLinksEnsuredRef.current = true;
+    (async () => {
+      try {
+        const createdLinks: WebsiteLink[] = [];
+        for (const site of recommendedSeedSites) {
+          const created = await linkService.createLink({
+            name: site.name,
+            url: site.url,
+            groupId: Number(recommendedGroup.id),
+            iconUrl: faviconUrlFor(site.url)
+          });
+          createdLinks.push(created);
+        }
+        if (createdLinks.length > 0) {
+          setLinks(prev => [...prev, ...createdLinks]);
+          localStorage.setItem(HOT_SEED_KEY, 'true');
+        } else {
+          hotLinksEnsuredRef.current = false;
+        }
+      } catch (err) {
+        console.warn('Failed to seed recommended links:', err);
+        hotLinksEnsuredRef.current = false;
+      }
+    })();
+  }, [allowSystemEdit, loading, links, recommendedGroup, recommendedSeedSites]);
+
   const mostVisitedLinks = useMemo(() => {
     return [...links]
       .filter(link => link.accessCount > 0)
@@ -460,7 +567,16 @@ export function DashboardPage() {
   }, [links]);
 
   return (
-    <div className="dashboard-page">
+    <div
+      className="dashboard-page immersive"
+      style={{
+        backgroundImage: `linear-gradient(160deg, rgba(15, 23, 42, 0.35), rgba(15, 23, 42, 0.05)), url(${lakeBackground})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        backgroundAttachment: 'fixed'
+      }}
+    >
       <header className="dashboard-header">
         <h1>{t.title}</h1>
         <div className="header-actions">
@@ -473,66 +589,13 @@ export function DashboardPage() {
               {t.adminTools}
             </button>
           )}
-          <button
-            type="button"
-            className="feedback-btn"
-            onClick={() => setFeedbackOpen(true)}
-          >
-            {t.feedbackLabel}
-          </button>
-          <div
-            className="notification-bell"
-            ref={notificationRef}
-            onMouseEnter={() => handleNotificationHover(true)}
-            onMouseLeave={() => handleNotificationHover(false)}
-          >
-            <button
-              type="button"
-              className="notification-bell-btn"
-              onClick={handleNotificationClick}
-              aria-label={t.notificationsLabel}
-            >
-              <span className="notification-bell-icon">🔔</span>
-              {notificationUnreadCount > 0 && (
-                <span className="notification-badge">{notificationUnreadCount}</span>
-              )}
-            </button>
-            {notificationPreviewOpen && (
-              <div className="notification-dropdown">
-                <div className="notification-dropdown-header">{t.notificationsLabel}</div>
-                <div className="notification-dropdown-list">
-                  {notificationLoading ? (
-                    <div className="notification-dropdown-empty">{t.notificationsLoading}</div>
-                  ) : notificationItems.length === 0 ? (
-                    <div className="notification-dropdown-empty">{t.notificationsEmpty}</div>
-                  ) : (
-                    notificationItems.slice(0, 3).map(item => (
-                      <div
-                        key={item.id}
-                        className={`notification-dropdown-item ${item.readAt ? 'read' : 'unread'}`}
-                      >
-                        <div className="notification-dropdown-title">{item.title}</div>
-                        <div className="notification-dropdown-message">{item.message}</div>
-                        <div className="notification-dropdown-meta">
-                          <span>{new Date(item.createdAt).toLocaleString()}</span>
-                          {!item.readAt && (
-                            <button
-                              type="button"
-                              className="notification-dropdown-action"
-                              onClick={() => handleNotificationRead(item.id)}
-                            >
-                              {t.markRead}
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-          <UserProfile compact showLogout={false} />
+          <UserProfile
+            compact
+            showLogout={false}
+            onOpenFeedback={() => setFeedbackOpen(true)}
+            onOpenNotifications={handleOpenNotifications}
+            notificationUnreadCount={notificationUnreadCount}
+          />
         </div>
       </header>
 
@@ -551,17 +614,85 @@ export function DashboardPage() {
         />
       )}
 
-      <div className="search-section">
-        <ModernSearchBar
+            <div className="search-section">
+        <SearchInterface
           onLinkClick={handleLinkClick}
-          onSearchResultsChange={(results: WebsiteLink[]) => {
-            console.log('Search results:', results);
-          }}
-          onQueryChange={(query: string) => {
-            console.log('Search query:', query);
-          }}
-          centered={true}
-          showSearchEngines={true}
+          onSearchResultsChange={() => {}}
+          onQueryChange={() => {}}
+          placeholder={language === 'zh'
+            ? '\u5728\u7f51\u9875\u4e2d\u641c\u7d22\uff0c\u6216\u8005\u8f93\u5165\u4e00\u4e2a\u7f51\u5740'
+            : 'Search the web or enter a URL'}
+          searchEngines={[
+            {
+              id: 'baidu',
+              label: language === 'zh' ? '\u767e\u5ea6' : 'Baidu',
+              buildUrl: (query) => `https://www.baidu.com/s?wd=${encodeURIComponent(query)}`
+            },
+            {
+              id: 'bing',
+              label: language === 'zh' ? '\u5fc5\u5e94' : 'Bing',
+              buildUrl: (query) => `https://www.bing.com/search?q=${encodeURIComponent(query)}`
+            },
+            {
+              id: 'google',
+              label: language === 'zh' ? '\u8c37\u6b4c' : 'Google',
+              buildUrl: (query) => `https://www.google.com/search?q=${encodeURIComponent(query)}`
+            },
+            {
+              id: 'sogou',
+              label: language === 'zh' ? '\u641c\u72d7' : 'Sogou',
+              buildUrl: (query) => `https://www.sogou.com/web?query=${encodeURIComponent(query)}`
+            },
+            {
+              id: 'so360',
+              label: language === 'zh' ? '360' : '360 Search',
+              buildUrl: (query) => `https://www.so.com/s?q=${encodeURIComponent(query)}`
+            },
+            {
+              id: 'duckduckgo',
+              label: 'DuckDuckGo',
+              buildUrl: (query) => `https://duckduckgo.com/?q=${encodeURIComponent(query)}`
+            }
+          ]}
+          aiSearchEngines={[
+            {
+              id: 'deepseek',
+              label: 'DeepSeek',
+              buildUrl: (query) => `https://chat.deepseek.com/?q=${encodeURIComponent(query)}`
+            },
+            {
+              id: 'doubao',
+              label: '\u8c46\u5305',
+              buildUrl: (query) => `https://www.doubao.com/?q=${encodeURIComponent(query)}`
+            },
+            {
+              id: 'qwen',
+              label: '\u901a\u4e49\u5343\u95ee',
+              buildUrl: (query) => `https://tongyi.aliyun.com/?q=${encodeURIComponent(query)}`
+            },
+            {
+              id: 'yiyan',
+              label: '\u6587\u5fc3\u4e00\u8a00',
+              buildUrl: (query) => `https://yiyan.baidu.com/?q=${encodeURIComponent(query)}`
+            },
+            {
+              id: 'xinghuo',
+              label: '\u8baf\u98de\u661f\u706b',
+              buildUrl: (query) => `https://xinghuo.xfyun.cn/?q=${encodeURIComponent(query)}`
+            },
+            {
+              id: 'kimi',
+              label: 'Kimi',
+              buildUrl: (query) => `https://kimi.moonshot.cn/?q=${encodeURIComponent(query)}`
+            },
+            {
+              id: 'chatglm',
+              label: '\u667a\u8c31\u6e05\u8a00',
+              buildUrl: (query) => `https://chatglm.cn/?q=${encodeURIComponent(query)}`
+            }
+          ]}
+          externalSearchUrl={(query) => `https://www.baidu.com/s?wd=${encodeURIComponent(query)}`}
+          disableInternalSearch={true}
         />
       </div>
 
@@ -577,8 +708,8 @@ export function DashboardPage() {
         ) : (
           <>
             <NavigationView
-              groups={groups}
-              links={links}
+              groups={normalGroups}
+              links={normalLinks}
               loading={loading}
               onLinkClick={handleLinkClick}
               onEditLink={handleEditLink}
@@ -606,6 +737,8 @@ export function DashboardPage() {
               allowSystemEdit={allowSystemEdit}
               compactMode={compactMode}
               initialActiveGroupId={initialGroupId}
+              recommendedGroup={recommendedGroup}
+              recommendedLinks={recommendedLinks}
             />
           </>
         )}
@@ -618,8 +751,6 @@ export function DashboardPage() {
         onToggleDarkMode={() => setDarkMode(!darkMode)}
         compactMode={compactMode}
         onToggleCompactMode={() => setCompactMode(!compactMode)}
-        transparentMode={transparentMode}
-        onToggleTransparentMode={() => setTransparentMode(!transparentMode)}
         language={language}
         onLanguageChange={setLanguage}
         gridSize={gridSize}
@@ -629,7 +760,6 @@ export function DashboardPage() {
           title: t.settingsTitle,
           darkMode: t.darkMode,
           compactMode: t.compactMode,
-          transparentMode: t.transparentMode,
           language: t.language,
           gridSize: t.gridSize,
           gridSizeSmall: t.gridSizeSmall,
@@ -650,7 +780,10 @@ export function DashboardPage() {
 
       <NotificationModal
         isOpen={notificationModalOpen}
-        onClose={() => setNotificationModalOpen(false)}
+        onClose={() => {
+          setNotificationModalOpen(false);
+          loadUnreadCount();
+        }}
         labels={{
           title: t.notificationsCenter,
           empty: t.notificationsEmpty,
@@ -681,9 +814,27 @@ export function DashboardPage() {
         defaultGroupId={defaultLinkGroupId ?? undefined}
       />
 
-      <Footer />
       <ScrollToTop />
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

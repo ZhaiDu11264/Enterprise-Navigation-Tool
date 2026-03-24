@@ -44,6 +44,11 @@ interface NavigationViewProps {
   allowSystemEdit?: boolean;
   compactMode?: boolean;
   initialActiveGroupId?: number | null;
+  showEditToggle?: boolean;
+  editToggleDisabled?: boolean;
+  editToggleDisabledTitle?: string;
+  recommendedGroup?: Group | null;
+  recommendedLinks?: WebsiteLink[];
   className?: string;
 }
 
@@ -84,6 +89,11 @@ export function NavigationView({
   allowSystemEdit = false,
   compactMode = false,
   initialActiveGroupId = null,
+  showEditToggle = true,
+  editToggleDisabled = false,
+  editToggleDisabledTitle,
+  recommendedGroup = null,
+  recommendedLinks = [],
   className = ""
 }: NavigationViewProps) {
   const { language } = useLanguage();
@@ -147,7 +157,7 @@ export function NavigationView({
   const [groupLayout, setGroupLayout] = useState<'tabs' | 'list'>('tabs');
   const [isEditMode, setIsEditMode] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const canEdit = isEditMode;
+  const canEdit = showEditToggle ? isEditMode : false;
 
   // Auto-select first group when groups are available and no group is selected
   useEffect(() => {
@@ -281,6 +291,10 @@ export function NavigationView({
     ? null
     : groups.find(g => Number(g.id) === activeGroupId) || null;
 
+  const recommendedSortedLinks = useMemo(() => {
+    return [...recommendedLinks].sort((a, b) => a.sortOrder - b.sortOrder);
+  }, [recommendedLinks]);
+
   return (
     <div className={`navigation-view ${isTransitioning ? 'view-transition' : ''} ${className}`}>
       <div className={`navigation-header ${groupLayout === 'tabs' ? 'tabs-header' : 'list-header'}`}>
@@ -290,19 +304,27 @@ export function NavigationView({
           </div>
           
           <div className="view-tools">
-            <button
-              className="edit-mode-btn"
-              onClick={() => setIsEditMode(prev => !prev)}
-              title={isEditMode ? t.doneTitle : t.editModeTitle}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                {isEditMode ? (
-                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-                ) : (
-                  <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-                )}
-              </svg>
-            </button>
+            {showEditToggle && (
+              <button
+                className="edit-mode-btn"
+                onClick={() => {
+                  if (editToggleDisabled) {
+                    return;
+                  }
+                  setIsEditMode(prev => !prev);
+                }}
+                disabled={editToggleDisabled}
+                title={editToggleDisabled ? (editToggleDisabledTitle || t.editModeTitle) : (isEditMode ? t.doneTitle : t.editModeTitle)}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  {isEditMode ? (
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                  ) : (
+                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                  )}
+                </svg>
+              </button>
+            )}
             
             {onOpenSettings && (
               <button
@@ -374,7 +396,7 @@ export function NavigationView({
             onLinkClick={onLinkClick}
             onEditLink={canEdit ? onEditLink : undefined}
             onDeleteLink={canEdit ? onDeleteLink : undefined}
-            onToggleFavorite={onToggleFavorite}
+            onToggleFavorite={canEdit ? onToggleFavorite : undefined}
             onReorderLinks={onReorderLinks}
             onLinkMoved={handleMoveToGroup}
             onEditGroup={canEdit ? onEditGroup : undefined}
@@ -382,6 +404,7 @@ export function NavigationView({
             onAddGroup={canEdit ? onAddGroup : undefined}
             onAddLink={canEdit ? handleAddLink : undefined}
             allowSystemEdit={allowSystemEdit}
+            showSystemIndicators={canEdit && allowSystemEdit}
             compactMode={compactMode}
             dragDisabled={!canEdit}
             viewMode={viewMode}
@@ -415,13 +438,36 @@ export function NavigationView({
             onLinkClick={onLinkClick}
             onEditLink={canEdit ? onEditLink : undefined}
             onDeleteLink={canEdit ? onDeleteLink : undefined}
-            onToggleFavorite={onToggleFavorite}
+            onToggleFavorite={canEdit ? onToggleFavorite : undefined}
             onReorder={handleLinkReorder}
             loading={loading}
             emptyMessage={getEmptyMessage()}
             viewMode={viewMode}
             allowSystemEdit={allowSystemEdit}
             onAddLinkClick={canEdit && (onAddLinkClick || onCreateLink) ? () => handleAddLink(activeGroupId) : undefined}
+            dragDisabled={!canEdit}
+            addLinkLabel={addLinkLabel}
+            compactMode={compactMode}
+            showActions={canEdit}
+          />
+        </div>
+      )}
+
+      {recommendedGroup && (
+        <div className="navigation-content recommended-section">
+          <div className="recommended-title">{recommendedGroup.name}</div>
+          <DraggableCardGrid
+            links={recommendedSortedLinks}
+            onLinkClick={onLinkClick}
+            onEditLink={canEdit ? onEditLink : undefined}
+            onDeleteLink={canEdit ? onDeleteLink : undefined}
+            onToggleFavorite={canEdit ? onToggleFavorite : undefined}
+            onReorder={handleLinkReorder}
+            loading={loading}
+            emptyMessage={t.noLinksInGroup}
+            viewMode={viewMode}
+            allowSystemEdit={allowSystemEdit}
+            onAddLinkClick={canEdit && (onAddLinkClick || onCreateLink) ? () => handleAddLink(recommendedGroup.id) : undefined}
             dragDisabled={!canEdit}
             addLinkLabel={addLinkLabel}
             compactMode={compactMode}

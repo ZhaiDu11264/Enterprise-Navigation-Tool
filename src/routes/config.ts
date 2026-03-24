@@ -77,8 +77,8 @@ router.post('/refresh', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Apply active configuration to user with merge strategy
-    await ConfigurationService.applyToUser(userId, activeConfig.id, 'merge');
+    // Apply active configuration to user with name-based sync strategy
+    await ConfigurationService.applyToUser(userId, activeConfig.id, 'sync');
 
     await logAudit(req, {
       userId,

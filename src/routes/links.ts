@@ -7,6 +7,14 @@ import { GroupService } from '../models/Group';
 import { logAudit } from '../utils/audit';
 
 const router = Router();
+const syncDefaultConfigForAdmin = async (userId: number, reason: string) => {
+  try {
+    await ConfigurationService.rebuildFromAdmin(userId, reason);
+  } catch (error) {
+    console.error('Auto rebuild default configuration failed:', error);
+  }
+};
+const lockedGroupNames = new Set(['内部办公', '农投AI创意事业部', '热门推荐']);
 
 const getRequestId = (req: Request): string => {
   const requestId = req.headers['x-request-id'];
@@ -29,16 +37,13 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    let links = await LinkService.getUserLinks(req.user.userId);
-    const hasSystemLink = links.some(link => link.isSystemLink);
-
-    if (!hasSystemLink) {
-      const activeConfig = await ConfigurationService.getActiveConfiguration();
-      if (activeConfig) {
-        await ConfigurationService.applyToUser(req.user.userId, activeConfig.id, 'merge');
-        links = await LinkService.getUserLinks(req.user.userId);
-      }
+    // Always sync from active default configuration so system links come from admin config
+    const activeConfig = await ConfigurationService.getActiveConfiguration();
+    if (activeConfig) {
+      await ConfigurationService.applyToUser(req.user.userId, activeConfig.id, 'sync');
     }
+
+    const links = await LinkService.getUserLinks(req.user.userId);
 
     res.status(200).json({
       success: true,
@@ -121,8 +126,20 @@ router.post('/', [
     let isSystemLink = false;
     let isDeletable: boolean | undefined;
 
+    const group = await GroupService.getGroupById(parsedGroupId);
+    if (group && req.user.role !== 'admin' && lockedGroupNames.has(group.name)) {
+      res.status(403).json({
+        error: {
+          code: 'GROUP_LOCKED',
+          message: 'This group is managed by the administrator',
+          timestamp: new Date().toISOString(),
+          requestId: getRequestId(req)
+        }
+      });
+      return;
+    }
+
     if (req.user.role === 'admin') {
-      const group = await GroupService.getGroupById(parsedGroupId);
       if (group && group.userId === req.user.userId && group.isSystemGroup) {
         isSystemLink = true;
         isDeletable = false;
@@ -147,6 +164,10 @@ router.post('/', [
       entityId: link.id,
       description: `Created link "${link.name}"`
     });
+
+    if (req.user.role === 'admin') {
+      await syncDefaultConfigForAdmin(req.user.userId, 'Auto rebuild after link.create');
+    }
 
     res.status(201).json({
       success: true,
@@ -252,6 +273,21 @@ router.put('/:id', [
       return;
     }
 
+    if (req.user.role !== 'admin') {
+      const existingGroup = await GroupService.getGroupById(existingLink.groupId);
+      if (existingGroup && lockedGroupNames.has(existingGroup.name)) {
+        res.status(403).json({
+          error: {
+            code: 'GROUP_LOCKED',
+            message: 'This group is managed by the administrator',
+            timestamp: new Date().toISOString(),
+            requestId: getRequestId(req)
+          }
+        });
+        return;
+      }
+    }
+
     const updates: any = {};
     const allowed = ['name', 'url', 'description', 'iconUrl', 'groupId', 'sortOrder', 'isFavorite'];
     for (const key of allowed) {
@@ -260,7 +296,23 @@ router.put('/:id', [
       }
     }
 
-    if (existingLink.isSystemLink && req.user.role !== 'admin') {
+    const targetGroupId = updates.groupId !== undefined ? Number(updates.groupId) : existingLink.groupId;
+    const targetGroup = await GroupService.getGroupById(targetGroupId);
+    const isTargetSystemGroup = Boolean(targetGroup?.isSystemGroup);
+
+    if (req.user.role !== 'admin' && targetGroup && lockedGroupNames.has(targetGroup.name)) {
+      res.status(403).json({
+        error: {
+          code: 'GROUP_LOCKED',
+          message: 'This group is managed by the administrator',
+          timestamp: new Date().toISOString(),
+          requestId: getRequestId(req)
+        }
+      });
+      return;
+    }
+
+    if ((existingLink.isSystemLink || isTargetSystemGroup) && req.user.role !== 'admin') {
       const allowedUserFields = ['isFavorite'];
       const attemptedFields = Object.keys(updates);
       const forbiddenFields = attemptedFields.filter(field => !allowedUserFields.includes(field));
@@ -278,6 +330,11 @@ router.put('/:id', [
       }
     }
 
+    if (req.user.role === 'admin' && isTargetSystemGroup) {
+      updates.isSystemLink = true;
+      updates.isDeletable = false;
+    }
+
     const link = await LinkService.updateLink(linkId, req.user.userId, updates);
 
     await logAudit(req, {
@@ -287,6 +344,10 @@ router.put('/:id', [
       entityId: link.id,
       description: `Updated link "${link.name}"`
     });
+
+    if (req.user.role === 'admin') {
+      await syncDefaultConfigForAdmin(req.user.userId, 'Auto rebuild after link.update');
+    }
 
     res.status(200).json({
       success: true,
@@ -347,8 +408,49 @@ router.delete('/:id', [
     }
 
     const linkId = parseInt(req.params.id!, 10);
+    const existingLink = await LinkService.getLinkById(linkId);
+    if (!existingLink) {
+      res.status(404).json({
+        error: {
+          code: 'LINK_NOT_FOUND',
+          message: 'Link not found',
+          timestamp: new Date().toISOString(),
+          requestId: getRequestId(req)
+        }
+      });
+      return;
+    }
+
+    const linkGroup = await GroupService.getGroupById(existingLink.groupId);
+    const isSystemGroup = Boolean(linkGroup?.isSystemGroup);
+    if (req.user.role !== 'admin' && linkGroup && lockedGroupNames.has(linkGroup.name)) {
+      res.status(403).json({
+        error: {
+          code: 'GROUP_LOCKED',
+          message: 'This group is managed by the administrator',
+          timestamp: new Date().toISOString(),
+          requestId: getRequestId(req)
+        }
+      });
+      return;
+    }
+    if ((existingLink.isSystemLink || isSystemGroup) && req.user.role !== 'admin') {
+      res.status(403).json({
+        error: {
+          code: 'INSUFFICIENT_PERMISSIONS',
+          message: 'Only administrators can edit system links',
+          timestamp: new Date().toISOString(),
+          requestId: getRequestId(req)
+        }
+      });
+      return;
+    }
+
     const allowSystemDelete = req.user.role === 'admin';
     await LinkService.deleteLink(linkId, req.user.userId, allowSystemDelete);
+    if (allowSystemDelete && (existingLink.isSystemLink || isSystemGroup)) {
+      await LinkService.removeSystemLinkFromDefaultConfig(req.user.userId, existingLink.name, linkGroup?.name);
+    }
 
     await logAudit(req, {
       userId: req.user.userId,
@@ -357,6 +459,10 @@ router.delete('/:id', [
       entityId: linkId,
       description: 'Deleted link'
     });
+
+    if (req.user.role === 'admin') {
+      await syncDefaultConfigForAdmin(req.user.userId, 'Auto rebuild after link.delete');
+    }
 
     res.status(200).json({
       success: true,

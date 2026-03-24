@@ -1387,6 +1387,52 @@ router.post('/config/:id/activate', async (req: Request, res: Response): Promise
 });
 
 /**
+ * POST /api/admin/config/rebuild
+ * Rebuild and activate configuration from current admin data
+ */
+router.post('/config/rebuild', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const rebuilt = await ConfigurationService.rebuildFromAdmin(req.user!.userId, 'Manual rebuild');
+    if (!rebuilt) {
+      res.status(403).json({
+        error: {
+          code: 'INSUFFICIENT_PERMISSIONS',
+          message: 'Only administrators can rebuild configuration',
+          timestamp: new Date().toISOString(),
+          requestId: req.headers['x-request-id'] || 'unknown'
+        }
+      });
+      return;
+    }
+
+    await logAudit(req, {
+      userId: req.user!.userId,
+      action: 'admin.config.rebuild',
+      entityType: 'configuration',
+      entityId: rebuilt.id,
+      description: 'Rebuilt configuration from admin data'
+    });
+
+    res.status(200).json({
+      success: true,
+      data: { configuration: rebuilt },
+      message: 'Configuration rebuilt and activated successfully',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Rebuild configuration error:', error);
+    res.status(500).json({
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Failed to rebuild configuration',
+        timestamp: new Date().toISOString(),
+        requestId: req.headers['x-request-id'] || 'unknown'
+      }
+    });
+  }
+});
+
+/**
  * DELETE /api/admin/config/:id
  * Delete configuration (admin only)
  */
@@ -1625,8 +1671,8 @@ router.post('/config/publish', [
   body('strategy')
     .notEmpty()
     .withMessage('Strategy is required')
-    .isIn(['reset', 'merge'])
-    .withMessage('Strategy must be either "reset" or "merge"'),
+    .isIn(['reset', 'merge', 'sync'])
+    .withMessage('Strategy must be either "reset", "merge" or "sync"'),
   body('userIds')
     .optional()
     .isArray()
@@ -1768,8 +1814,8 @@ router.post('/users/:id/reset', [
     .withMessage('Configuration ID must be a positive integer'),
   body('strategy')
     .optional()
-    .isIn(['reset', 'merge'])
-    .withMessage('Strategy must be either "reset" or "merge"')
+    .isIn(['reset', 'merge', 'sync'])
+    .withMessage('Strategy must be either "reset", "merge" or "sync"')
 ], async (req: Request, res: Response): Promise<void> => {
   try {
     // Check validation errors
@@ -1972,8 +2018,8 @@ router.post('/users/:id/sync', [
       return;
     }
 
-    // Apply configuration to user with merge strategy
-    await ConfigurationService.applyToUser(userId, targetConfigId, 'merge');
+    // Apply configuration to user with sync strategy
+    await ConfigurationService.applyToUser(userId, targetConfigId, 'sync');
 
     await logAudit(req, {
       userId: req.user!.userId,
@@ -1990,7 +2036,7 @@ router.post('/users/:id/sync', [
         username: user.username,
         configurationId: targetConfigId,
         configurationName: configuration.name,
-        strategy: 'merge'
+        strategy: 'sync'
       },
       message: 'User configuration synced successfully',
       timestamp: new Date().toISOString()

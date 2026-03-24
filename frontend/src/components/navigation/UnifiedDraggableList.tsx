@@ -19,6 +19,7 @@ interface UnifiedDraggableListProps {
   onAddGroup?: () => void;
   onAddLink?: (groupId: number | null) => void;
   allowSystemEdit?: boolean;
+  showSystemIndicators?: boolean;
   compactMode?: boolean;
   dragDisabled?: boolean;
   viewMode?: 'grid' | 'list';
@@ -51,6 +52,7 @@ export function UnifiedDraggableList({
   onDeleteGroup,
   onAddGroup,
   allowSystemEdit = false,
+  showSystemIndicators = false,
   compactMode = false,
   dragDisabled = false,
   viewMode = 'list',
@@ -339,7 +341,7 @@ export function UnifiedDraggableList({
           const groupKey = Number(group.id);
           const isCollapsed = collapsedGroups.has(groupKey);
           const canEditGroup = Boolean(onEditGroup && (!group.isSystemGroup || allowSystemEdit));
-          const canDeleteGroup = Boolean(onDeleteGroup && group.isDeletable);
+          const canDeleteGroup = Boolean(onDeleteGroup && (group.isDeletable || allowSystemEdit));
           const isListView = viewMode === 'list';
 
           return (
@@ -362,7 +364,7 @@ export function UnifiedDraggableList({
                     </svg>
                   </span>
                   <span className="grouped-name">{group.name}</span>
-                  {group.isSystemGroup && (
+                  {group.isSystemGroup && showSystemIndicators && (
                     <span className="grouped-system" title={labels.systemGroup}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M12,7C13.4,7 14.8,8.6 14.8,10V11.5C15.4,11.5 16,12.4 16,13V16C16,17.4 15.4,18 14.8,18H9.2C8.6,18 8,17.4 8,16V13C8,12.4 8.6,11.5 9.2,11.5V10C9.2,8.6 10.6,7 12,7M12,8.2C11.2,8.2 10.5,8.7 10.5,10V11.5H13.5V10C13.5,8.7 12.8,8.2 12,8.2Z" />

@@ -127,7 +127,7 @@ export const ensureActiveDefaultConfiguration = async (): Promise<DefaultConfigu
 
 export const syncConfigurationToAllUsers = async (
   configId: number,
-  strategy: 'reset' | 'merge' = 'merge'
+  strategy: 'reset' | 'merge' | 'sync' = 'merge'
 ): Promise<void> => {
   const users = await UserService.getAllUsers();
 

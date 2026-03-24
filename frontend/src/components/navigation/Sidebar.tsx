@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { WebsiteLink } from '../../types';
 import './Sidebar.css';
 
@@ -28,6 +28,7 @@ export function Sidebar({
   const [expandedSection, setExpandedSection] = useState<'mostVisited' | 'favorites' | null>(null);
   const [mostVisitedPage, setMostVisitedPage] = useState(0);
   const [favoritesPage, setFavoritesPage] = useState(0);
+  const sidebarRef = useRef<HTMLElement>(null);
 
   const mostVisitedStart = mostVisitedPage * pageSize;
   const favoritesStart = favoritesPage * pageSize;
@@ -51,6 +52,22 @@ export function Sidebar({
     }
   }, [expandedSection]);
 
+  useEffect(() => {
+    if (!isExpanded) {
+      return;
+    }
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (!sidebarRef.current) {
+        return;
+      }
+      if (!sidebarRef.current.contains(event.target as Node)) {
+        setIsExpanded(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [isExpanded]);
+
   const renderLinkItem = (link: WebsiteLink) => (
     <div 
       key={link.id} 
@@ -73,7 +90,7 @@ export function Sidebar({
   );
 
   return (
-    <aside className={`sidebar ${isExpanded ? 'expanded' : 'collapsed'}`}>
+    <aside ref={sidebarRef} className={`sidebar ${isExpanded ? 'expanded' : 'collapsed'}`}>
       <div className="sidebar-inner">
         <button 
           className="sidebar-toggle"

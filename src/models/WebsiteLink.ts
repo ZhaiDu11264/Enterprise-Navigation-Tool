@@ -119,7 +119,7 @@ export class LinkService {
 
   // Update link
   static async updateLink(id: number, userId: number, updates: Partial<WebsiteLink>): Promise<WebsiteLink> {
-    const allowedFields = ['name', 'url', 'description', 'iconUrl', 'groupId', 'sortOrder', 'isFavorite'];
+    const allowedFields = ['name', 'url', 'description', 'iconUrl', 'groupId', 'sortOrder', 'isFavorite', 'isSystemLink', 'isDeletable'];
     const updateFields: string[] = [];
     const updateValues: any[] = [];
     
@@ -143,6 +143,10 @@ export class LinkService {
           updateFields.push('sort_order = ?');
         } else if (key === 'isFavorite') {
           updateFields.push('is_favorite = ?');
+        } else if (key === 'isSystemLink') {
+          updateFields.push('is_system_link = ?');
+        } else if (key === 'isDeletable') {
+          updateFields.push('is_deletable = ?');
         } else {
           updateFields.push(`${key} = ?`);
         }
@@ -365,7 +369,7 @@ export class LinkService {
       const userResult = await executeQuery<{ role: string }>(userQuery, [userId]);
       const userRow = userResult[0];
       
-      if (!userRow || userRow.role !== 'admin' || !updatedLink.isSystemLink) {
+      if (!userRow || userRow.role !== 'admin') {
         return; // Skip sync for non-admin users or non-system links
       }
 
@@ -392,6 +396,11 @@ export class LinkService {
       }>(groupQuery, [updatedLink.groupId]);
       const groupRow = groupRows[0];
       const groupName = groupRow?.name;
+      const isGroupSystem = Boolean(groupRow?.is_system_group);
+      const shouldSync = Boolean(updatedLink.isSystemLink || isGroupSystem);
+      if (!shouldSync) {
+        return;
+      }
 
       if (groupName) {
         const normalize = (value: string) => value.trim().toLowerCase();
@@ -416,8 +425,8 @@ export class LinkService {
         iconUrl: updatedLink.iconUrl || undefined,
         groupName: groupName || 'Ungrouped',
         sortOrder: updatedLink.sortOrder,
-        isSystemLink: updatedLink.isSystemLink,
-        isDeletable: updatedLink.isDeletable
+        isSystemLink: true,
+        isDeletable: false
       };
 
       if (linkToUpdate) {
@@ -442,6 +451,50 @@ export class LinkService {
     } catch (error) {
       console.error('Auto-sync to default config failed:', error);
       // Don't throw error to avoid breaking the main update operation
+    }
+  }
+
+  // Remove system link from default configuration when admin deletes it
+  static async removeSystemLinkFromDefaultConfig(userId: number, linkName: string, groupName?: string | null): Promise<void> {
+    try {
+      const userQuery = 'SELECT role FROM users WHERE id = ?';
+      const userResult = await executeQuery<{ role: string }>(userQuery, [userId]);
+      const userRow = userResult[0];
+
+      if (!userRow || userRow.role !== 'admin') {
+        return;
+      }
+
+      const { ConfigurationService } = await import('./DefaultConfiguration');
+      const activeConfig = await ConfigurationService.getActiveConfiguration();
+      if (!activeConfig) {
+        console.warn('No active configuration found for system link removal');
+        return;
+      }
+
+      const normalize = (value: string) => value.trim().toLowerCase();
+      const targetName = normalize(linkName);
+      const targetGroup = groupName ? normalize(groupName) : null;
+      const configData = activeConfig.configData;
+      const nextLinks = configData.links.filter(link => {
+        if (normalize(link.name) !== targetName) {
+          return true;
+        }
+        if (targetGroup) {
+          return normalize(link.groupName) !== targetGroup;
+        }
+        return false;
+      });
+
+      if (nextLinks.length !== configData.links.length) {
+        configData.links = nextLinks;
+        await executeQuery(
+          'UPDATE default_configurations SET config_data = ?, version = version + 1, updated_at = NOW() WHERE id = ?',
+          [JSON.stringify(configData), activeConfig.id]
+        );
+      }
+    } catch (error) {
+      console.error('Remove system link from default config failed:', error);
     }
   }
 }

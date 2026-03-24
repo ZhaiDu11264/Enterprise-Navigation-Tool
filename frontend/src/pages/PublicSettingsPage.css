@@ -1,0 +1,133 @@
+.guest-settings-page {
+  min-height: 100vh;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  display: flex;
+  flex-direction: column;
+  color: #f8fafc;
+}
+
+.guest-settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 6vw;
+}
+
+.guest-settings-header h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  text-shadow: 0 6px 18px rgba(15, 23, 42, 0.35);
+}
+
+.guest-settings-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.guest-settings-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  text-decoration: none;
+  backdrop-filter: blur(6px);
+}
+
+.guest-settings-btn.primary {
+  background: rgba(37, 99, 235, 0.85);
+}
+
+.guest-settings-content {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: 4vh 6vw 8vh;
+}
+
+.guest-settings-card {
+  width: min(720px, 100%);
+  background: rgba(15, 23, 42, 0.35);
+  border-radius: 18px;
+  padding: 2rem;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.35);
+}
+
+.guest-settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.guest-settings-label {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.guest-settings-range {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.guest-settings-range input[type="range"] {
+  flex: 1;
+}
+
+.guest-settings-preview {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.preview-icon {
+  height: 64px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: calc(18px * var(--icon-scale, 1));
+}
+
+.guest-settings-hint {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  margin-bottom: 1.5rem;
+}
+
+.guest-settings-reset {
+  border: none;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 0.5rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .guest-settings-header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .guest-settings-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .guest-settings-preview {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

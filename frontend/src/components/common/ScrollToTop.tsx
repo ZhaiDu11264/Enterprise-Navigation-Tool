@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
+import { useLanguage } from '../../contexts/LanguageContext';
 import './ScrollToTop.css';
 
 export function ScrollToTop() {
+  const { language } = useLanguage();
   const [isVisible, setIsVisible] = useState(false);
+
+  const label = language === 'zh' ? '回到顶部' : 'Back to top';
 
   useEffect(() => {
     const toggleVisibility = () => {
-      // 当页面滚动超过300px时显示按钮
       if (window.pageYOffset > 300) {
         setIsVisible(true);
       } else {
@@ -32,8 +35,8 @@ export function ScrollToTop() {
     <button
       className={`scroll-to-top ${isVisible ? 'visible' : ''}`}
       onClick={scrollToTop}
-      aria-label="回到顶部"
-      title="回到顶部"
+      aria-label={label}
+      title={label}
     >
       <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
         <path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/>

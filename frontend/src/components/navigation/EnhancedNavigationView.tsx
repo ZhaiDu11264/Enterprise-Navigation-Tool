@@ -1,5 +1,6 @@
-import React, { useState, useCallback, useMemo } from 'react';
+﻿import React, { useState, useCallback, useMemo } from 'react';
 import { WebsiteLink, Group } from '../../types';
+import { useLanguage } from '../../contexts/LanguageContext';
 import SelectionToolbar from './SelectionToolbar';
 import BatchOperations from '../admin/BatchOperations';
 import SelectableLinkCard from './SelectableLinkCard';
@@ -30,12 +31,34 @@ const EnhancedNavigationView: React.FC<EnhancedNavigationViewProps> = ({
   onRefresh,
   className
 }) => {
+  const { language } = useLanguage();
   const [activeGroupId, setActiveGroupId] = useState<number | null>(null);
   const [selectedLinks, setSelectedLinks] = useState<WebsiteLink[]>([]);
   const [selectionMode, setSelectionMode] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  // Filter links based on active group
+  const t = language === 'zh'
+    ? {
+        loading: '加载中...',
+        gridView: '网格视图',
+        listView: '列表视图',
+        emptyTitle: '暂无链接',
+        emptyGroup: '此分组中还没有链接',
+        emptyAll: '还没有添加任何链接',
+        showing: (current: number, total: number) => `显示 ${current} / ${total} 个链接`,
+        selected: (count: number) => `已选择 ${count} 个`
+      }
+    : {
+        loading: 'Loading...',
+        gridView: 'Grid View',
+        listView: 'List View',
+        emptyTitle: 'No Links Yet',
+        emptyGroup: 'There are no links in this group yet',
+        emptyAll: 'No links have been added yet',
+        showing: (current: number, total: number) => `Showing ${current} / ${total} links`,
+        selected: (count: number) => `${count} selected`
+      };
+
   const filteredLinks = useMemo(() => {
     if (activeGroupId === null) {
       return links;
@@ -43,7 +66,6 @@ const EnhancedNavigationView: React.FC<EnhancedNavigationViewProps> = ({
     return links.filter(link => link.groupId === activeGroupId);
   }, [links, activeGroupId]);
 
-  // Selection handlers
   const handleSelectLink = useCallback((linkId: number, selected: boolean) => {
     const link = links.find(l => l.id === linkId);
     if (!link) return;
@@ -51,16 +73,13 @@ const EnhancedNavigationView: React.FC<EnhancedNavigationViewProps> = ({
     setSelectedLinks(prev => {
       if (selected) {
         return prev.some(l => l.id === linkId) ? prev : [...prev, link];
-      } else {
-        return prev.filter(l => l.id !== linkId);
       }
+      return prev.filter(l => l.id !== linkId);
     });
   }, [links]);
 
   const handleSelectAll = useCallback(() => {
-    const currentLinks = activeGroupId 
-      ? links.filter(link => link.groupId === activeGroupId)
-      : links;
+    const currentLinks = activeGroupId ? links.filter(link => link.groupId === activeGroupId) : links;
     setSelectedLinks(currentLinks);
   }, [links, activeGroupId]);
 
@@ -85,7 +104,6 @@ const EnhancedNavigationView: React.FC<EnhancedNavigationViewProps> = ({
     }
   }, [selectionMode]);
 
-  // Batch operations handlers
   const handleBatchDelete = useCallback(async (linkIds: number[]) => {
     try {
       await batchService.batchDelete(linkIds);
@@ -132,7 +150,6 @@ const EnhancedNavigationView: React.FC<EnhancedNavigationViewProps> = ({
     setSelectedLinks([]);
   }, []);
 
-  // Check if link is selected
   const isLinkSelected = useCallback((linkId: number) => {
     return selectedLinks.some(link => link.id === linkId);
   }, [selectedLinks]);
@@ -140,41 +157,39 @@ const EnhancedNavigationView: React.FC<EnhancedNavigationViewProps> = ({
   if (loading) {
     return (
       <div className="enhanced-navigation-loading">
-        <div className="loading-spinner">加载中...</div>
+        <div className="loading-spinner">{t.loading}</div>
       </div>
     );
   }
 
   return (
     <div className={`enhanced-navigation-view ${className || ''}`}>
-      {/* Group Tabs */}
       <div className="navigation-header">
         <DraggableGroupTabs
           groups={groups}
           activeGroupId={activeGroupId}
           onGroupSelect={setActiveGroupId}
-          onReorderGroups={() => {}} // Implement if needed
+          onReorderGroups={() => {}}
         />
-        
+
         <div className="view-controls">
           <button
             className={`view-mode-btn ${viewMode === 'grid' ? 'active' : ''}`}
             onClick={() => setViewMode('grid')}
-            title="网格视图"
+            title={t.gridView}
           >
             ⊞
           </button>
           <button
             className={`view-mode-btn ${viewMode === 'list' ? 'active' : ''}`}
             onClick={() => setViewMode('list')}
-            title="列表视图"
+            title={t.listView}
           >
             ☰
           </button>
         </div>
       </div>
 
-      {/* Selection Toolbar */}
       <SelectionToolbar
         allLinks={links}
         selectedLinks={selectedLinks}
@@ -188,7 +203,6 @@ const EnhancedNavigationView: React.FC<EnhancedNavigationViewProps> = ({
         groups={groups}
       />
 
-      {/* Batch Operations */}
       {selectionMode && selectedLinks.length > 0 && (
         <BatchOperations
           selectedLinks={selectedLinks}
@@ -201,18 +215,12 @@ const EnhancedNavigationView: React.FC<EnhancedNavigationViewProps> = ({
         />
       )}
 
-      {/* Links Grid/List */}
       <div className={`links-container ${viewMode}`}>
         {filteredLinks.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-icon">📂</div>
-            <h3>暂无链接</h3>
-            <p>
-              {activeGroupId 
-                ? '此分组中还没有链接' 
-                : '还没有添加任何链接'
-              }
-            </p>
+            <div className="empty-icon">📨</div>
+            <h3>{t.emptyTitle}</h3>
+            <p>{activeGroupId ? t.emptyGroup : t.emptyAll}</p>
           </div>
         ) : (
           <div className={`links-grid ${viewMode}`}>
@@ -232,17 +240,10 @@ const EnhancedNavigationView: React.FC<EnhancedNavigationViewProps> = ({
         )}
       </div>
 
-      {/* Stats Footer */}
       <div className="navigation-footer">
         <div className="stats-info">
-          <span>
-            显示 {filteredLinks.length} / {links.length} 个链接
-          </span>
-          {selectedLinks.length > 0 && (
-            <span>
-              已选择 {selectedLinks.length} 个
-            </span>
-          )}
+          <span>{t.showing(filteredLinks.length, links.length)}</span>
+          {selectedLinks.length > 0 && <span>{t.selected(selectedLinks.length)}</span>}
         </div>
       </div>
     </div>

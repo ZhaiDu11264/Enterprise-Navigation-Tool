@@ -126,14 +126,15 @@ export class GroupService {
   }
 
   // Delete group (soft delete)
-  static async deleteGroup(id: number, userId: number): Promise<void> {
+  static async deleteGroup(id: number, userId: number, options?: { allowSystemDelete?: boolean }): Promise<void> {
     // First check if this is a system group that cannot be deleted
     const group = await this.getGroupById(id);
     if (!group) {
       throw new Error('Group not found');
     }
     
-    if (!group.isDeletable) {
+    const allowSystemDelete = Boolean(options?.allowSystemDelete);
+    if (!group.isDeletable && !allowSystemDelete) {
       throw new Error('Cannot delete system group');
     }
     
@@ -156,6 +157,44 @@ export class GroupService {
     
     if ((result as any).affectedRows === 0) {
       throw new Error('Group not found or access denied');
+    }
+  }
+
+  // Remove system group from default configuration when admin deletes it
+  static async removeSystemGroupFromDefaultConfig(userId: number, groupName: string): Promise<void> {
+    try {
+      const userQuery = 'SELECT role FROM users WHERE id = ?';
+      const userResult = await executeQuery<{ role: string }>(userQuery, [userId]);
+      const userRow = userResult[0];
+
+      if (!userRow || userRow.role !== 'admin') {
+        return;
+      }
+
+      const { ConfigurationService } = await import('./DefaultConfiguration');
+      const activeConfig = await ConfigurationService.getActiveConfiguration();
+      if (!activeConfig) {
+        console.warn('No active configuration found for system group removal');
+        return;
+      }
+
+      const normalize = (value: string) => value.trim().toLowerCase();
+      const target = normalize(groupName);
+      const configData = activeConfig.configData;
+      const nextGroups = configData.groups.filter(group => normalize(group.name) !== target);
+      const nextLinks = configData.links.filter(link => normalize(link.groupName) !== target);
+      const changed = nextGroups.length !== configData.groups.length || nextLinks.length !== configData.links.length;
+
+      if (changed) {
+        configData.groups = nextGroups;
+        configData.links = nextLinks;
+        await executeQuery(
+          'UPDATE default_configurations SET config_data = ?, version = version + 1, updated_at = NOW() WHERE id = ?',
+          [JSON.stringify(configData), activeConfig.id]
+        );
+      }
+    } catch (error) {
+      console.error('Remove system group from default config failed:', error);
     }
   }
 

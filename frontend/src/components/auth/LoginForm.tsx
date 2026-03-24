@@ -1,4 +1,4 @@
-import React, { useState, FormEvent } from 'react';
+﻿import React, { useState, FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -30,6 +30,8 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
       submit: 'Sign In',
       footerPrefix: 'New here?',
       footerLink: 'Create an account',
+      english: 'English',
+      chinese: 'Chinese',
       errors: {
         usernameRequired: 'Username is required',
         passwordRequired: 'Password is required',
@@ -37,26 +39,27 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
       }
     },
     zh: {
-      title: '\u767b\u5f55',
-      subtitle: '\u8bf7\u8f93\u5165\u8d26\u53f7\u4fe1\u606f\u4ee5\u8fdb\u5165\u7cfb\u7edf',
-      username: '\u7528\u6237\u540d',
-      password: '\u5bc6\u7801',
-      usernamePlaceholder: '\u8bf7\u8f93\u5165\u7528\u6237\u540d',
-      passwordPlaceholder: '\u8bf7\u8f93\u5165\u5bc6\u7801',
-      submit: '\u767b\u5f55',
-      footerPrefix: '\u6ca1\u6709\u8d26\u53f7\uff1f',
-      footerLink: '\u6ce8\u518c\u8d26\u53f7',
+      title: '登录',
+      subtitle: '请输入账号信息以进入系统',
+      username: '用户名',
+      password: '密码',
+      usernamePlaceholder: '请输入用户名',
+      passwordPlaceholder: '请输入密码',
+      submit: '登录',
+      footerPrefix: '没有账号？',
+      footerLink: '注册账号',
+      english: '英文',
+      chinese: '中文',
       errors: {
-        usernameRequired: '\u8bf7\u8f93\u5165\u7528\u6237\u540d',
-        passwordRequired: '\u8bf7\u8f93\u5165\u5bc6\u7801',
-        passwordLength: '\u5bc6\u7801\u81f3\u5c11 6 \u4f4d'
+        usernameRequired: '请输入用户名',
+        passwordRequired: '请输入密码',
+        passwordLength: '密码至少 6 位'
       }
     }
   } as const;
 
   const t = translations[language];
 
-  // Validate form
   const validateForm = (): boolean => {
     const errors: FormErrors = {};
 
@@ -74,7 +77,6 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
     return Object.keys(errors).length === 0;
   };
 
-  // Handle input change
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -82,7 +84,6 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
       [name]: value,
     }));
 
-    // Clear field error when user starts typing
     if (formErrors[name]) {
       setFormErrors(prev => ({
         ...prev,
@@ -90,13 +91,11 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
       }));
     }
 
-    // Clear auth error when user starts typing
     if (error) {
       clearError();
     }
   };
 
-  // Handle form submission
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -107,9 +106,8 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
     try {
       await login(formData);
       onSuccess?.();
-    } catch (error) {
-      // Error is handled by the auth context
-      console.error('Login failed:', error);
+    } catch (submitError) {
+      console.error('Login failed:', submitError);
     }
   };
 
@@ -123,14 +121,14 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
               className={`lang-btn ${language === 'zh' ? 'active' : ''}`}
               onClick={() => setLanguage('zh')}
             >
-              中文
+              {t.chinese}
             </button>
             <button
               type="button"
               className={`lang-btn ${language === 'en' ? 'active' : ''}`}
               onClick={() => setLanguage('en')}
             >
-              English
+              {t.english}
             </button>
           </div>
           <h2>{t.title}</h2>

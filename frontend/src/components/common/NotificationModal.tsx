@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import notificationService, { UserNotification } from '../../services/notificationService';
+import { useLanguage } from '../../contexts/LanguageContext';
 import './NotificationModal.css';
 
 interface NotificationModalProps {
@@ -17,10 +18,15 @@ interface NotificationModalProps {
 }
 
 export function NotificationModal({ isOpen, onClose, labels }: NotificationModalProps) {
+  const { language } = useLanguage();
   const modalRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<UserNotification[]>([]);
   const unreadCount = useMemo(() => items.filter(item => !item.readAt).length, [items]);
+
+  const localLabels = language === 'zh'
+    ? { unreadPrefix: '未读', close: '关闭' }
+    : { unreadPrefix: 'Unread', close: 'Close' };
 
   const loadNotifications = async () => {
     setLoading(true);
@@ -92,13 +98,13 @@ export function NotificationModal({ isOpen, onClose, labels }: NotificationModal
         <div className="notification-modal-header">
           <div>
             <h2>{labels.title}</h2>
-            <p>{unreadCount > 0 ? `未读 ${unreadCount}` : ''}</p>
+            <p>{unreadCount > 0 ? `${localLabels.unreadPrefix} ${unreadCount}` : ''}</p>
           </div>
           <div className="notification-modal-actions">
             <button type="button" onClick={handleClearAll} disabled={items.length === 0}>
               {labels.clearAll}
             </button>
-            <button type="button" className="close" onClick={onClose}>
+            <button type="button" className="close" onClick={onClose} aria-label={localLabels.close}>
               ×
             </button>
           </div>
@@ -114,9 +120,7 @@ export function NotificationModal({ isOpen, onClose, labels }: NotificationModal
                 <div className="notification-modal-main">
                   <div className="notification-modal-title">{item.title}</div>
                   <div className="notification-modal-message">{item.message}</div>
-                  <div className="notification-modal-time">
-                    {new Date(item.createdAt).toLocaleString()}
-                  </div>
+                  <div className="notification-modal-time">{new Date(item.createdAt).toLocaleString()}</div>
                 </div>
                 <div className="notification-modal-ops">
                   {!item.readAt && (

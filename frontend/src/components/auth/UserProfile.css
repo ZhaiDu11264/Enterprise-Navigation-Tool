@@ -144,6 +144,14 @@
   font-weight: 500;
 }
 
+body.theme-dark .user-details .username {
+  color: #f3f4f6;
+}
+
+body.theme-dark .user-profile.compact .user-info .username {
+  color: #e5e7eb;
+}
+
 .profile-modal-overlay {
   position: fixed;
   inset: 0;
@@ -192,6 +200,37 @@
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+}
+
+.profile-quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 10px;
+  background: rgba(248, 250, 252, 0.9);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+.profile-quick-actions .profile-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.profile-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 0.65rem;
+  font-weight: 700;
 }
 
 .profile-avatar-row {
@@ -447,6 +486,11 @@ body.theme-dark .profile-modal-footer {
 
 body.theme-dark .profile-modal-header h2 {
   color: #e2e8f0;
+}
+
+body.theme-dark .profile-quick-actions {
+  background: rgba(15, 23, 42, 0.7);
+  border-color: rgba(30, 41, 59, 0.8);
 }
 
 body.theme-dark .profile-form-group label,

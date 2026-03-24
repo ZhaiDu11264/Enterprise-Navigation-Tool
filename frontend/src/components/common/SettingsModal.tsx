@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+﻿import React, { useEffect, useRef } from 'react';
 import { User } from '../../types';
 import { GridSize } from '../../contexts/SettingsContext';
 import './SettingsModal.css';
@@ -10,8 +10,6 @@ interface SettingsModalProps {
   onToggleDarkMode: () => void;
   compactMode: boolean;
   onToggleCompactMode: () => void;
-  transparentMode: boolean;
-  onToggleTransparentMode: () => void;
   language: 'en' | 'zh';
   onLanguageChange: (language: 'en' | 'zh') => void;
   gridSize: GridSize;
@@ -22,7 +20,6 @@ interface SettingsModalProps {
     title: string;
     darkMode: string;
     compactMode: string;
-    transparentMode: string;
     language: string;
     gridSize: string;
     gridSizeSmall: string;
@@ -44,8 +41,6 @@ export function SettingsModal({
   onToggleDarkMode,
   compactMode,
   onToggleCompactMode,
-  transparentMode,
-  onToggleTransparentMode,
   language,
   onLanguageChange,
   gridSize,
@@ -122,14 +117,6 @@ export function SettingsModal({
           </section>
 
           <section className="settings-section">
-            <div className="settings-section-title">{labels.transparentMode}</div>
-            <label className="toggle">
-              <input type="checkbox" checked={transparentMode} onChange={onToggleTransparentMode} />
-              <span className="toggle-slider"></span>
-            </label>
-          </section>
-
-          <section className="settings-section">
             <div className="settings-section-title">{labels.language}</div>
             <div className="settings-select">
               <select
@@ -161,7 +148,7 @@ export function SettingsModal({
             <>
               <div className="settings-divider"></div>
               <section className="settings-section">
-                <div className="settings-section-title">{labels.adminTools || '管理工具'}</div>
+                <div className="settings-section-title">{labels.adminTools || (language === 'zh' ? '管理工具' : 'Admin Tools')}</div>
               </section>
               <section className="settings-section settings-action">
                 <button 
@@ -175,7 +162,7 @@ export function SettingsModal({
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
                   </svg>
-                  <span>{labels.batchManagement || '批量管理'}</span>
+                  <span>{labels.batchManagement || (language === 'zh' ? '批量管理' : 'Batch Management')}</span>
                 </button>
               </section>
             </>
@@ -192,3 +179,4 @@ export function SettingsModal({
     </div>
   );
 }
+

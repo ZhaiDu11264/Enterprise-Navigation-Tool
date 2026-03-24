@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { ProtectedRoute } from './components/auth';
@@ -9,9 +9,29 @@ import { RegisterPage } from './pages/RegisterPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { SearchPage } from './pages/SearchPage';
 import { AdminPage } from './pages/AdminPage';
+import { PublicHomePage } from './pages/PublicHomePage';
+import { PublicSettingsPage } from './pages/PublicSettingsPage';
 import { ErrorBoundary, NotificationProvider } from './components/common';
 import ConfigurationUpdateNotification from './components/common/ConfigurationUpdateNotification';
 import './App.css';
+
+function HomeRoute() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner">Loading...</div>
+      </div>
+    );
+  }
+
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <PublicHomePage />;
+}
 
 function App() {
   return (
@@ -26,6 +46,7 @@ function App() {
                     {/* Public routes */}
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/register" element={<RegisterPage />} />
+                    <Route path="/guest-settings" element={<PublicSettingsPage />} />
                     
                     {/* Protected routes */}
                     <Route
@@ -53,11 +74,11 @@ function App() {
                       }
                     />
                     
-                    {/* Default redirect */}
-                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                    {/* Public home */}
+                    <Route path="/" element={<HomeRoute />} />
                     
-                    {/* Catch all - redirect to dashboard */}
-                    <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                    {/* Catch all - redirect to home */}
+                    <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>
                   
                   {/* Global configuration update notification - disabled in development */}

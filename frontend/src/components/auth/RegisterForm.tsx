@@ -1,4 +1,4 @@
-import React, { FormEvent, useState } from 'react';
+﻿import React, { FormEvent, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { LoadingButton } from '../common/LoadingSpinner';
 import authService from '../../services/authService';
@@ -44,10 +44,13 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
       submit: 'Create Account',
       footerPrefix: 'Already have an account?',
       footerLink: 'Sign in',
+      english: 'English',
+      chinese: 'Chinese',
       notifications: {
         createdTitle: 'Account created',
         createdMessage: 'Welcome! Your default navigation has been initialized.',
-        failedTitle: 'Registration failed'
+        failedTitle: 'Registration failed',
+        defaultErrorMessage: 'Registration failed'
       },
       errors: {
         usernameRequired: 'Username is required',
@@ -63,35 +66,38 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
       }
     },
     zh: {
-      title: '\u6ce8\u518c\u8d26\u53f7',
-      subtitle: '\u521b\u5efa\u8d26\u53f7\u4ee5\u5f00\u59cb\u4f7f\u7528\u4f01\u4e1a\u7f51\u5740\u5bfc\u822a',
-      username: '\u7528\u6237\u540d',
-      email: '\u90ae\u7bb1',
-      password: '\u5bc6\u7801',
-      confirmPassword: '\u786e\u8ba4\u5bc6\u7801',
-      usernamePlaceholder: '\u4f8b\u5982\uff1azhangsan',
+      title: '注册账号',
+      subtitle: '创建账号以开始使用企业网址导航',
+      username: '用户名',
+      email: '邮箱',
+      password: '密码',
+      confirmPassword: '确认密码',
+      usernamePlaceholder: '例如：zhangsan',
       emailPlaceholder: 'name@company.com',
-      passwordPlaceholder: '\u81f3\u5c11 6 \u4f4d\uff0c\u9700\u5305\u542b\u5927\u5c0f\u5199\u5b57\u6bcd\u4e0e\u6570\u5b57',
-      confirmPasswordPlaceholder: '\u518d\u6b21\u8f93\u5165\u5bc6\u7801',
-      submit: '\u6ce8\u518c',
-      footerPrefix: '\u5df2\u6709\u8d26\u53f7\uff1f',
-      footerLink: '\u53bb\u767b\u5f55',
+      passwordPlaceholder: '至少 6 位，需包含大小写字母与数字',
+      confirmPasswordPlaceholder: '再次输入密码',
+      submit: '注册',
+      footerPrefix: '已有账号？',
+      footerLink: '去登录',
+      english: '英文',
+      chinese: '中文',
       notifications: {
-        createdTitle: '\u8d26\u53f7\u5df2\u521b\u5efa',
-        createdMessage: '\u6b22\u8fce\u4f7f\u7528\uff0c\u9ed8\u8ba4\u5bfc\u822a\u5df2\u521d\u59cb\u5316\u3002',
-        failedTitle: '\u6ce8\u518c\u5931\u8d25'
+        createdTitle: '账号已创建',
+        createdMessage: '欢迎使用，默认导航已初始化。',
+        failedTitle: '注册失败',
+        defaultErrorMessage: '注册失败'
       },
       errors: {
-        usernameRequired: '\u8bf7\u8f93\u5165\u7528\u6237\u540d',
-        usernameLength: '\u7528\u6237\u540d\u957f\u5ea6\u9700\u5728 3-50 \u4f4d\u4e4b\u95f4',
-        usernameFormat: '\u7528\u6237\u540d\u53ea\u80fd\u5305\u542b\u5b57\u6bcd\u3001\u6570\u5b57\u3001\u4e0b\u5212\u7ebf\u6216\u8fde\u5b57\u7b26',
-        emailRequired: '\u8bf7\u8f93\u5165\u90ae\u7bb1',
-        emailInvalid: '\u90ae\u7bb1\u683c\u5f0f\u4e0d\u6b63\u786e',
-        passwordRequired: '\u8bf7\u8f93\u5165\u5bc6\u7801',
-        passwordLength: '\u5bc6\u7801\u81f3\u5c11 6 \u4f4d',
-        passwordFormat: '\u5bc6\u7801\u9700\u5305\u542b\u5927\u5c0f\u5199\u5b57\u6bcd\u53ca\u6570\u5b57',
-        confirmRequired: '\u8bf7\u786e\u8ba4\u5bc6\u7801',
-        confirmMismatch: '\u4e24\u6b21\u5bc6\u7801\u4e0d\u4e00\u81f4'
+        usernameRequired: '请输入用户名',
+        usernameLength: '用户名长度需在 3-50 位之间',
+        usernameFormat: '用户名只能包含字母、数字、下划线或连字符',
+        emailRequired: '请输入邮箱',
+        emailInvalid: '邮箱格式不正确',
+        passwordRequired: '请输入密码',
+        passwordLength: '密码至少 6 位',
+        passwordFormat: '密码需包含大小写字母及数字',
+        confirmRequired: '请确认密码',
+        confirmMismatch: '两次密码不一致'
       }
     }
   } as const;
@@ -167,7 +173,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
       showSuccess(t.notifications.createdTitle, t.notifications.createdMessage);
       onSuccess?.();
     } catch (err: any) {
-      const message = err?.message || 'Registration failed';
+      const message = err?.message || t.notifications.defaultErrorMessage;
       setSubmitError(message);
       showError(t.notifications.failedTitle, message);
     } finally {
@@ -185,14 +191,14 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
               className={`lang-btn ${language === 'zh' ? 'active' : ''}`}
               onClick={() => setLanguage('zh')}
             >
-              中文
+              {t.chinese}
             </button>
             <button
               type="button"
               className={`lang-btn ${language === 'en' ? 'active' : ''}`}
               onClick={() => setLanguage('en')}
             >
-              English
+              {t.english}
             </button>
           </div>
           <h2>{t.title}</h2>

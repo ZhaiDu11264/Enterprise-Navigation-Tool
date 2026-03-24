@@ -10,9 +10,18 @@ import './UserProfile.css';
 interface UserProfileProps {
   showLogout?: boolean;
   compact?: boolean;
+  onOpenFeedback?: () => void;
+  onOpenNotifications?: () => void;
+  notificationUnreadCount?: number;
 }
 
-export function UserProfile({ showLogout = true, compact = false }: UserProfileProps) {
+export function UserProfile({
+  showLogout = true,
+  compact = false,
+  onOpenFeedback,
+  onOpenNotifications,
+  notificationUnreadCount = 0
+}: UserProfileProps) {
   const { language } = useLanguage();
   const translations = {
     en: {
@@ -35,6 +44,10 @@ export function UserProfile({ showLogout = true, compact = false }: UserProfileP
       importFailed: 'Import failed. Please check the file.',
       exportFailed: 'Export failed. Please try again.',
       importErrorSummary: (count: number, summary: string) => `${count} failed: ${summary}`,
+      feedbackLabel: 'Feedback',
+      notificationsLabel: 'Notifications',
+      feedbackTitle: 'Send feedback',
+      notificationsTitle: 'Open notifications',
       save: 'Save',
       cancel: 'Cancel',
       logout: 'Log out'
@@ -59,6 +72,10 @@ export function UserProfile({ showLogout = true, compact = false }: UserProfileP
       importFailed: '\u5bfc\u5165\u5931\u8d25\uff0c\u8bf7\u68c0\u67e5\u6587\u4ef6\u3002',
       exportFailed: '\u5bfc\u51fa\u5931\u8d25\uff0c\u8bf7\u91cd\u8bd5\u3002',
       importErrorSummary: (count: number, summary: string) => `${count} \u6761\u5931\u8d25\uff1a${summary}`,
+      feedbackLabel: '\u53cd\u9988',
+      notificationsLabel: '\u901a\u77e5',
+      feedbackTitle: '\u53cd\u9988',
+      notificationsTitle: '\u67e5\u770b\u901a\u77e5',
       save: '\u4fdd\u5b58',
       cancel: '\u53d6\u6d88',
       logout: '\u9000\u51fa\u767b\u5f55'
@@ -257,6 +274,39 @@ export function UserProfile({ showLogout = true, compact = false }: UserProfileP
             </button>
           </div>
           <div className="profile-modal-body">
+            {(onOpenFeedback || onOpenNotifications) && (
+              <div className="profile-quick-actions">
+                {onOpenNotifications && (
+                  <button
+                    type="button"
+                    className="profile-btn secondary"
+                    onClick={() => {
+                      onOpenNotifications();
+                      setIsModalOpen(false);
+                    }}
+                    title={t.notificationsTitle}
+                  >
+                    {t.notificationsLabel}
+                    {notificationUnreadCount > 0 && (
+                      <span className="profile-badge">{notificationUnreadCount}</span>
+                    )}
+                  </button>
+                )}
+                {onOpenFeedback && (
+                  <button
+                    type="button"
+                    className="profile-btn secondary"
+                    onClick={() => {
+                      onOpenFeedback();
+                      setIsModalOpen(false);
+                    }}
+                    title={t.feedbackTitle}
+                  >
+                    {t.feedbackLabel}
+                  </button>
+                )}
+              </div>
+            )}
             <div className="profile-avatar-row">
               <div className="profile-avatar-preview">
                 {avatarPreview ? (

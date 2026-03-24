@@ -166,21 +166,245 @@ export class ConfigurationService {
     }
   }
 
+  // Apply raw configuration data to a user (no DB-stored config required)
+  static async applyConfigDataToUser(
+    userId: number,
+    configData: ConfigurationData,
+    strategy: 'reset' | 'merge' | 'sync' = 'reset'
+  ): Promise<void> {
+    if (strategy === 'reset') {
+      await executeQuery('UPDATE website_links SET is_active = false WHERE user_id = ?', [userId]);
+      await executeQuery('UPDATE `groups` SET is_active = false WHERE user_id = ?', [userId]);
+    }
+
+    const normalize = (value: string) => value.trim().toLowerCase();
+    const systemGroupNames = new Set(
+      configData.groups
+        .filter(group => group.isSystemGroup)
+        .map(group => normalize(group.name))
+    );
+
+    if (strategy === 'sync') {
+      const userSystemGroups = await executeQuery<{ id: number; name: string }>(
+        'SELECT id, name FROM `groups` WHERE user_id = ? AND is_active = true AND is_system_group = true',
+        [userId]
+      );
+
+      for (const group of userSystemGroups) {
+        if (!systemGroupNames.has(normalize(group.name))) {
+          await executeQuery(
+            'UPDATE website_links SET is_active = false, updated_at = CURRENT_TIMESTAMP WHERE group_id = ? AND is_active = true',
+            [group.id]
+          );
+          await executeQuery(
+            'UPDATE `groups` SET is_active = false, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
+            [group.id, userId]
+          );
+        }
+      }
+    }
+
+    const groupMapping: { [key: string]: number } = {};
+
+    for (const groupData of configData.groups) {
+      let group;
+
+      if (strategy === 'merge' || strategy === 'sync') {
+        const existingRows = await executeQuery<{
+          id: number;
+          is_active: number | boolean;
+        }>(
+          'SELECT id, is_active FROM `groups` WHERE user_id = ? AND TRIM(LOWER(name)) = TRIM(LOWER(?)) ORDER BY is_active DESC, id ASC LIMIT 1',
+          [userId, groupData.name]
+        );
+        const existingRow = existingRows[0];
+        if (existingRow) {
+          await executeQuery(
+            `UPDATE \`groups\`
+             SET name = ?, description = ?, sort_order = ?, is_system_group = ?, is_deletable = ?, is_active = true, updated_at = CURRENT_TIMESTAMP
+             WHERE id = ? AND user_id = ?`,
+            [
+              groupData.name,
+              groupData.description ?? null,
+              groupData.sortOrder ?? 0,
+              groupData.isSystemGroup || false,
+              groupData.isDeletable !== undefined ? groupData.isDeletable : true,
+              existingRow.id,
+              userId
+            ]
+          );
+          group = await GroupService.getGroupById(existingRow.id);
+        }
+      }
+
+      if (!group) {
+        group = await GroupService.createGroup(userId, {
+          name: groupData.name,
+          description: groupData.description ?? undefined,
+          sortOrder: groupData.sortOrder,
+          isSystemGroup: groupData.isSystemGroup || false,
+          isDeletable: groupData.isDeletable !== undefined ? groupData.isDeletable : true
+        });
+      }
+
+      groupMapping[groupData.name] = group.id;
+    }
+
+    for (const linkData of configData.links) {
+      const groupId = groupMapping[linkData.groupName];
+      if (!groupId) {
+        console.warn(`Group ${linkData.groupName} not found for link ${linkData.name}`);
+        continue;
+      }
+
+      if (strategy === 'merge' || strategy === 'sync') {
+        if (linkData.isSystemLink) {
+          const existingLinks = await LinkService.getLinksByGroup(userId, groupId);
+          const normalizedName = normalize(linkData.name);
+          const matches = existingLinks.filter(link =>
+            normalize(link.name) === normalizedName || link.url === linkData.url
+          );
+
+          if (matches.length > 0) {
+            const primary = matches.find(link => link.isSystemLink) ?? matches[0];
+            if (!primary) {
+              continue;
+            }
+
+            await LinkService.updateLink(primary.id, userId, {
+              name: linkData.name,
+              url: linkData.url,
+              description: linkData.description ?? undefined,
+              iconUrl: linkData.iconUrl ?? undefined,
+              groupId: groupId,
+              sortOrder: linkData.sortOrder,
+              isSystemLink: true,
+              isDeletable: false
+            });
+
+            for (const dup of matches) {
+              if (dup.id === primary.id) {
+                continue;
+              }
+              await executeQuery(
+                'UPDATE website_links SET is_active = false, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
+                [dup.id, userId]
+              );
+            }
+            continue;
+          }
+        } else {
+          const existingLinks = await LinkService.getLinksByGroup(userId, groupId);
+          const existingLink = existingLinks.find(link => link.url === linkData.url);
+          if (existingLink) {
+            continue;
+          }
+        }
+      }
+
+      await LinkService.createLink(userId, {
+        name: linkData.name,
+        url: linkData.url,
+        description: linkData.description ?? undefined,
+        iconUrl: linkData.iconUrl ?? undefined,
+        groupId: groupId,
+        sortOrder: linkData.sortOrder,
+        isSystemLink: linkData.isSystemLink || false,
+        isDeletable: linkData.isDeletable !== undefined ? linkData.isDeletable : true
+      });
+    }
+
+    if (strategy === 'sync') {
+      const systemLinks = await executeQuery<{
+        id: number;
+        name: string;
+        group_id: number;
+      }>(
+        `SELECT wl.id, wl.name, wl.group_id
+         FROM website_links wl
+         JOIN \`groups\` g ON wl.group_id = g.id
+         WHERE wl.user_id = ? AND wl.is_active = true AND g.is_active = true AND g.is_system_group = true`,
+        [userId]
+      );
+
+      const configLinkMap = new Map<string, Set<string>>();
+      for (const link of configData.links) {
+        const groupKey = normalize(link.groupName);
+        if (!configLinkMap.has(groupKey)) {
+          configLinkMap.set(groupKey, new Set());
+        }
+        configLinkMap.get(groupKey)!.add(normalize(link.name));
+      }
+
+      const seen = new Set<string>();
+      for (const link of systemLinks) {
+        const groupRows = await executeQuery<{ name: string }>(
+          'SELECT name FROM `groups` WHERE id = ? AND user_id = ?',
+          [link.group_id, userId]
+        );
+        const groupName = groupRows[0]?.name;
+        if (!groupName) {
+          continue;
+        }
+        const groupKey = normalize(groupName);
+        const nameKey = normalize(link.name);
+        const allowed = configLinkMap.get(groupKey);
+        const identity = `${groupKey}::${nameKey}`;
+
+        if (!allowed || !allowed.has(nameKey) || seen.has(identity)) {
+          await executeQuery(
+            'UPDATE website_links SET is_active = false, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
+            [link.id, userId]
+          );
+        } else {
+          seen.add(identity);
+        }
+      }
+    }
+  }
+
   // Apply configuration to a user
   static async applyToUser(
     userId: number,
     configId: number,
-    strategy: 'reset' | 'merge' = 'reset'
+    strategy: 'reset' | 'merge' | 'sync' = 'reset'
   ): Promise<void> {
     const config = await this.getConfigurationById(configId);
     if (!config) {
       throw new Error('Configuration not found');
     }
-    
+
     if (strategy === 'reset') {
       // Delete existing user data
       await executeQuery('UPDATE website_links SET is_active = false WHERE user_id = ?', [userId]);
       await executeQuery('UPDATE `groups` SET is_active = false WHERE user_id = ?', [userId]);
+    }
+
+    const normalize = (value: string) => value.trim().toLowerCase();
+    const systemGroupNames = new Set(
+      config.configData.groups
+        .filter(group => group.isSystemGroup)
+        .map(group => normalize(group.name))
+    );
+
+    if (strategy === 'sync') {
+      const userSystemGroups = await executeQuery<{ id: number; name: string }>(
+        'SELECT id, name FROM `groups` WHERE user_id = ? AND is_active = true AND is_system_group = true',
+        [userId]
+      );
+
+      for (const group of userSystemGroups) {
+        if (!systemGroupNames.has(normalize(group.name))) {
+          await executeQuery(
+            'UPDATE website_links SET is_active = false, updated_at = CURRENT_TIMESTAMP WHERE group_id = ? AND is_active = true',
+            [group.id]
+          );
+          await executeQuery(
+            'UPDATE `groups` SET is_active = false, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
+            [group.id, userId]
+          );
+        }
+      }
     }
     
     // Create groups from configuration
@@ -189,7 +413,7 @@ export class ConfigurationService {
     for (const groupData of config.configData.groups) {
       let group;
       
-      if (strategy === 'merge') {
+      if (strategy === 'merge' || strategy === 'sync') {
         // Check if group already exists (case/whitespace insensitive, include inactive)
         const existingRows = await executeQuery<{
           id: number;
@@ -242,24 +466,42 @@ export class ConfigurationService {
         continue;
       }
       
-      if (strategy === 'merge') {
+      if (strategy === 'merge' || strategy === 'sync') {
         // For system links, check by name and update if exists
         if (linkData.isSystemLink) {
           const existingLinks = await LinkService.getLinksByGroup(userId, groupId);
-          const existingSystemLink = existingLinks.find(link => 
-            link.name === linkData.name && link.isSystemLink
+          const normalizedName = normalize(linkData.name);
+          const matches = existingLinks.filter(link =>
+            normalize(link.name) === normalizedName || link.url === linkData.url
           );
-          
-          if (existingSystemLink) {
-            // Update existing system link
-            await LinkService.updateLink(existingSystemLink.id, userId, {
+
+          if (matches.length > 0) {
+            const primary = matches.find(link => link.isSystemLink) ?? matches[0];
+            if (!primary) {
+              continue;
+            }
+
+            // Update existing link and convert to system if needed
+            await LinkService.updateLink(primary.id, userId, {
               name: linkData.name,
               url: linkData.url,
               description: linkData.description ?? undefined,
               iconUrl: linkData.iconUrl ?? undefined,
               groupId: groupId,
-              sortOrder: linkData.sortOrder
+              sortOrder: linkData.sortOrder,
+              isSystemLink: true,
+              isDeletable: false
             });
+
+            for (const dup of matches) {
+              if (dup.id === primary.id) {
+                continue;
+              }
+              await executeQuery(
+                'UPDATE website_links SET is_active = false, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
+                [dup.id, userId]
+              );
+            }
             continue; // Skip creating new link
           }
         } else {
@@ -285,6 +527,48 @@ export class ConfigurationService {
         isDeletable: linkData.isDeletable !== undefined ? linkData.isDeletable : true
       });
     }
+
+    if (strategy === 'sync') {
+      const systemLinks = await executeQuery<{
+        id: number;
+        name: string;
+        group_id: number;
+      }>(
+        `SELECT wl.id, wl.name, wl.group_id
+         FROM website_links wl
+         JOIN \`groups\` g ON wl.group_id = g.id
+         WHERE wl.user_id = ? AND wl.is_active = true AND g.is_active = true AND g.is_system_group = true`,
+        [userId]
+      );
+
+      const configLinkMap = new Map<string, Set<string>>();
+      for (const link of config.configData.links) {
+        const groupKey = normalize(link.groupName);
+        if (!configLinkMap.has(groupKey)) {
+          configLinkMap.set(groupKey, new Set());
+        }
+        configLinkMap.get(groupKey)!.add(normalize(link.name));
+      }
+
+      for (const link of systemLinks) {
+        const groupRows = await executeQuery<{ name: string }>(
+          'SELECT name FROM `groups` WHERE id = ? AND user_id = ?',
+          [link.group_id, userId]
+        );
+        const groupName = groupRows[0]?.name;
+        if (!groupName) {
+          continue;
+        }
+        const groupKey = normalize(groupName);
+        const allowed = configLinkMap.get(groupKey);
+        if (!allowed || !allowed.has(normalize(link.name))) {
+          await executeQuery(
+            'UPDATE website_links SET is_active = false, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
+            [link.id, userId]
+          );
+        }
+      }
+    }
   }
 
   // Apply active configuration to a new user
@@ -296,6 +580,23 @@ export class ConfigurationService {
     }
     
     await this.applyToUser(userId, activeConfig.id, 'reset');
+  }
+
+  // Rebuild default configuration from an admin user's current setup and activate it
+  static async rebuildFromAdmin(userId: number, description?: string): Promise<DefaultConfiguration | null> {
+    const roleRows = await executeQuery<{ role: string }>('SELECT role FROM users WHERE id = ?', [userId]);
+    const role = roleRows[0]?.role;
+    if (role !== 'admin') {
+      return null;
+    }
+
+    const activeConfig = await this.getActiveConfiguration();
+    const name = activeConfig?.name || '默认企业配置';
+    const desc = description ?? activeConfig?.description ?? 'Auto-generated from admin changes';
+
+    const newConfig = await this.createFromUser(userId, name, desc, userId);
+    await this.activateConfiguration(newConfig.id);
+    return newConfig;
   }
 
   // Get all configurations

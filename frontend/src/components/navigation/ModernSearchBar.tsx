@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { WebsiteLink } from '../../types';
 import { SearchService } from '../../services/searchService';
 import { useDebounce } from '../../hooks/useDebounce';
 import { getSearchEngines, SearchEngine } from '../../config/searchEngines';
+import { useLanguage } from '../../contexts/LanguageContext';
 import './ModernSearchBar.css';
 
 interface ModernSearchBarProps {
@@ -15,6 +16,7 @@ interface ModernSearchBarProps {
   showSearchEngines?: boolean;
   initialQuery?: string;
   initialEngineName?: string;
+  disableInternalSearch?: boolean;
 }
 
 const SEARCH_ENGINES: SearchEngine[] = getSearchEngines();
@@ -27,11 +29,16 @@ export function ModernSearchBar({
   centered = true,
   showSearchEngines = true,
   initialQuery,
-  initialEngineName
+  initialEngineName,
+  disableInternalSearch = false
 }: ModernSearchBarProps) {
+  const { language } = useLanguage();
+  const availableEngines = disableInternalSearch
+    ? SEARCH_ENGINES.filter((engine) => engine.type !== 'internal')
+    : SEARCH_ENGINES;
   const defaultSearchEngine =
-    SEARCH_ENGINES.find((engine) => engine.type !== 'internal') ||
-    SEARCH_ENGINES[0];
+    availableEngines.find((engine) => engine.type !== 'internal') ||
+    availableEngines[0];
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<WebsiteLink[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -47,6 +54,23 @@ export function ModernSearchBar({
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const engineSelectorRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const t = language === 'zh'
+    ? {
+        engineSearchTitle: (name: string) => `\u4f7f\u7528 ${name} \u641c\u7d22`,
+        clear: '\u6e05\u9664',
+        search: '\u641c\u7d22',
+        quickAccess: '\u5feb\u901f\u8bbf\u95ee',
+        history: '\u641c\u7d22\u8bb0\u5f55',
+        clearHistory: '\u6e05\u9664\u641c\u7d22\u8bb0\u5f55'
+      }
+    : {
+        engineSearchTitle: (name: string) => `Search with ${name}`,
+        clear: 'Clear',
+        search: 'Search',
+        quickAccess: 'Quick Access',
+        history: 'Search History',
+        clearHistory: 'Clear Search History'
+      };
 
   useEffect(() => {
     if (typeof initialQuery !== 'string') {
@@ -59,11 +83,11 @@ export function ModernSearchBar({
     if (!initialEngineName) {
       return;
     }
-    const preferred = SEARCH_ENGINES.find((engine) => engine.name === initialEngineName);
+    const preferred = availableEngines.find((engine) => engine.name === initialEngineName);
     if (preferred) {
       setCurrentSearchEngine(preferred);
     }
-  }, [initialEngineName]);
+  }, [availableEngines, initialEngineName]);
 
   // Load search history from localStorage on component mount
   useEffect(() => {
@@ -72,7 +96,6 @@ export function ModernSearchBar({
       try {
         const history = JSON.parse(savedHistory);
         setSearchHistory(Array.isArray(history) ? history.slice(0, 10) : []);
-        console.log('🔍 加载搜索记录:', history);
       } catch (err) {
         console.error('Failed to load search history:', err);
         setSearchHistory([]);
@@ -106,8 +129,7 @@ export function ModernSearchBar({
     }
     setSearchHistory([]);
     localStorage.removeItem('searchHistory');
-    console.log('🔍 搜索记录已清除');
-    // 不要立即关闭下拉菜单，让用户看到清空效果
+    // 涓嶈绔嬪嵆鍏抽棴涓嬫媺鑿滃崟锛岃鐢ㄦ埛鐪嬪埌娓呯┖鏁堟灉
     setTimeout(() => {
       setShowHistory(false);
     }, 500);
@@ -119,33 +141,36 @@ export function ModernSearchBar({
   // Search for suggestions when debounced query changes
   useEffect(() => {
     const searchSuggestions = async () => {
-      console.log('🔍 搜索建议触发, 查询:', debouncedQuery, '长度:', debouncedQuery.trim().length);
       
       if (debouncedQuery.trim().length < 2) {
         setSuggestions([]);
         setShowSuggestions(false);
         
-        // 如果输入为空且有搜索记录且获得焦点，显示搜索记录
+        // 濡傛灉杈撳叆涓虹┖涓旀湁鎼滅储璁板綍涓旇幏寰楃劍鐐癸紝鏄剧ず鎼滅储璁板綍
         if (isFocused && searchHistory.length > 0 && debouncedQuery.trim().length === 0) {
           setShowHistory(true);
-          console.log('🔍 显示搜索记录 (输入为空)');
         } else {
           setShowHistory(false);
         }
         return;
       }
 
-      // 有输入内容时隐藏搜索记录
+      // 鏈夎緭鍏ュ唴瀹规椂闅愯棌鎼滅储璁板綍
       setShowHistory(false);
+
+      if (disableInternalSearch) {
+        setSuggestions([]);
+        setShowSuggestions(false);
+        setIsSearching(false);
+        return;
+      }
 
       try {
         setIsSearching(true);
         const response = await SearchService.searchLinks(debouncedQuery, 6);
         setSuggestions(response.results);
         setShowSuggestions(response.results.length > 0 && isFocused);
-        console.log('🔍 搜索建议结果:', response.results.length);
       } catch (err) {
-        console.error('Search suggestions error:', err);
         setSuggestions([]);
         setShowSuggestions(false);
       } finally {
@@ -154,7 +179,7 @@ export function ModernSearchBar({
     };
 
     searchSuggestions();
-  }, [debouncedQuery, isFocused, searchHistory.length]);
+  }, [debouncedQuery, isFocused, searchHistory.length, disableInternalSearch]);
 
   // Handle input change
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -181,7 +206,7 @@ export function ModernSearchBar({
       // Open URL directly
       const url = finalQuery.startsWith('http') ? finalQuery : `https://${finalQuery}`;
       window.open(url, '_blank');
-    } else if (currentSearchEngine.type === 'internal') {
+    } else if (currentSearchEngine.type === 'internal' && !disableInternalSearch) {
       navigate(`/search?q=${encodeURIComponent(finalQuery)}`);
     } else {
       // Search using current search engine
@@ -189,7 +214,7 @@ export function ModernSearchBar({
       window.open(searchUrl, '_blank');
     }
 
-    if (currentSearchEngine.type !== 'internal') {
+    if (currentSearchEngine.type !== 'internal' && !disableInternalSearch) {
       // Also search internal links
       try {
         const response = await SearchService.searchLinks(finalQuery);
@@ -267,12 +292,11 @@ export function ModernSearchBar({
 
   // Handle history item click
   const handleHistoryClick = (historyItem: string) => {
-    console.log('🔍 点击搜索记录:', historyItem);
     setQuery(historyItem);
     setShowHistory(false);
     setSelectedIndex(-1);
     
-    // 立即执行搜索
+    // 绔嬪嵆鎵ц鎼滅储
     setTimeout(() => {
       handleSearch(historyItem);
     }, 100);
@@ -280,7 +304,6 @@ export function ModernSearchBar({
 
   // Handle search engine change
   const handleEngineChange = (engine: SearchEngine) => {
-    console.log('🔍 切换搜索引擎:', engine.name);
     setCurrentSearchEngine(engine);
     setShowEngineSelector(false);
     searchInputRef.current?.focus();
@@ -289,24 +312,21 @@ export function ModernSearchBar({
   // Handle focus
   const handleFocus = () => {
     setIsFocused(true);
-    console.log('🔍 搜索框获得焦点，搜索记录数量:', searchHistory.length, '当前查询:', query);
     
-    // 如果没有输入内容且有搜索记录，显示搜索记录
+    // 濡傛灉娌℃湁杈撳叆鍐呭涓旀湁鎼滅储璁板綍锛屾樉绀烘悳绱㈣褰?
     if (query.trim().length === 0 && searchHistory.length > 0) {
       setShowHistory(true);
       setShowSuggestions(false);
-      console.log('🔍 显示搜索记录');
     } else if (suggestions.length > 0) {
       setShowSuggestions(true);
       setShowHistory(false);
-      console.log('🔍 显示搜索建议');
     }
   };
 
   // Handle blur
   const handleBlur = () => {
     setIsFocused(false);
-    // 延迟关闭下拉菜单，确保点击事件能执行
+    // 寤惰繜鍏抽棴涓嬫媺鑿滃崟锛岀‘淇濈偣鍑讳簨浠惰兘鎵ц
     setTimeout(() => {
       setShowSuggestions(false);
       setShowHistory(false);
@@ -319,7 +339,7 @@ export function ModernSearchBar({
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
       
-      // 检查是否点击在搜索建议外部
+      // 妫€鏌ユ槸鍚︾偣鍑诲湪鎼滅储寤鸿澶栭儴
       if (
         suggestionsRef.current &&
         !suggestionsRef.current.contains(target) &&
@@ -331,13 +351,12 @@ export function ModernSearchBar({
         setSelectedIndex(-1);
       }
 
-      // 检查是否点击在搜索引擎选择器外部
+      // 妫€鏌ユ槸鍚︾偣鍑诲湪鎼滅储寮曟搸閫夋嫨鍣ㄥ閮?
       if (
         engineSelectorRef.current &&
         !engineSelectorRef.current.contains(target) &&
         !target.closest('.engine-button')
       ) {
-        console.log('🔍 点击外部，关闭搜索引擎下拉菜单');
         setShowEngineSelector(false);
       }
     };
@@ -363,10 +382,9 @@ export function ModernSearchBar({
                   e.preventDefault();
                   e.stopPropagation();
                   const newState = !showEngineSelector;
-                  console.log('🔍 点击搜索引擎按钮, 切换状态:', showEngineSelector, '=>', newState);
                   setShowEngineSelector(newState);
                 }}
-                title={`使用 ${currentSearchEngine.name} 搜索`}
+                title={t.engineSearchTitle(currentSearchEngine.name)}
               >
                 <span className="engine-icon">{currentSearchEngine.icon}</span>
                 <svg 
@@ -385,14 +403,13 @@ export function ModernSearchBar({
                   ref={engineSelectorRef} 
                   className="engine-dropdown"
                 >
-                  {SEARCH_ENGINES.map((engine) => (
+                  {availableEngines.map((engine) => (
                     <div
                       key={engine.name}
                       className={`engine-option ${engine.name === currentSearchEngine.name ? 'active' : ''}`}
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        console.log('🔍 选择搜索引擎:', engine.name);
                         handleEngineChange(engine);
                       }}
                     >
@@ -434,7 +451,7 @@ export function ModernSearchBar({
                   searchInputRef.current?.focus();
                 }}
                 className="clear-button"
-                title="Clear"
+                title={t.clear}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
@@ -446,7 +463,7 @@ export function ModernSearchBar({
               type="submit"
               className="search-button"
               disabled={isSearching}
-              title="Search"
+              title={t.search}
             >
               {isSearching ? (
                 <div className="loading-spinner" />
@@ -467,7 +484,7 @@ export function ModernSearchBar({
             onMouseDown={handleDropdownMouseDown}
           >
             <div className="suggestions-header">
-              <span className="suggestions-title">快速访问</span>
+              <span className="suggestions-title">{t.quickAccess}</span>
             </div>
             {suggestions.map((link, index) => (
               <div
@@ -517,7 +534,6 @@ export function ModernSearchBar({
                 onMouseDown={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  console.log('🔍 点击搜索记录:', historyItem);
                   handleHistoryClick(historyItem);
                 }}
                 onMouseEnter={() => setSelectedIndex(index)}
@@ -527,7 +543,7 @@ export function ModernSearchBar({
               </div>
             ))}
             <div className="suggestions-footer">
-              <span className="suggestions-title">搜索记录</span>
+              <span className="suggestions-title">{t.history}</span>
               <button
                 type="button"
                 className="clear-history-btn"
@@ -538,10 +554,9 @@ export function ModernSearchBar({
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  console.log('🔍 点击清除搜索记录按钮');
                   clearHistory(e);
                 }}
-                title="清除搜索记录"
+                title={t.clearHistory}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
@@ -554,6 +569,13 @@ export function ModernSearchBar({
     </div>
   );
 }
+
+
+
+
+
+
+
 
 
 

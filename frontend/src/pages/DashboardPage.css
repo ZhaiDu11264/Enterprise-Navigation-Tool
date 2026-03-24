@@ -1,14 +1,34 @@
 .dashboard-page {
   width: 100%;
-  height: 100%;
+  height: 100vh;
   min-height: 100vh;
   background: #f8fafc;
   position: relative;
   overflow-x: hidden;
-  overflow-y: scroll;
+  overflow-y: scroll !important;
+  scrollbar-gutter: stable;
   display: flex;
   flex-direction: column;
 }
+
+/* Force visible scrollbar */
+.dashboard-page::-webkit-scrollbar {
+  width: 12px;
+}
+
+.dashboard-page::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.dashboard-page::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.6);
+  border-radius: 999px;
+}
+
+.dashboard-page::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.8);
+}
+
 
 .dashboard-header {
   background: white;
@@ -29,6 +49,270 @@
   position: relative;
   overflow: visible;
   z-index: 30;
+}
+
+/* Immersive mode (default) */
+.dashboard-page.immersive {
+  background: transparent;
+}
+
+.dashboard-page.immersive::before {
+  content: none;
+}
+
+.dashboard-page.immersive .dashboard-header,
+.dashboard-page.immersive .search-section {
+  background: transparent;
+  box-shadow: none;
+  border: none;
+  backdrop-filter: none;
+}
+
+.dashboard-page.immersive .dashboard-header h1 {
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 6px 18px rgba(15, 23, 42, 0.35);
+}
+
+.dashboard-page.immersive .admin-link-btn,
+.dashboard-page.immersive .feedback-btn,
+.dashboard-page.immersive .notification-bell-btn,
+.dashboard-page.immersive .batch-management-btn {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: blur(6px);
+}
+
+.dashboard-page.immersive .feedback-btn {
+  color: #fef3c7;
+}
+
+.dashboard-page.immersive .notification-dropdown {
+  background: rgba(15, 23, 42, 0.5);
+  border: none;
+  box-shadow: none;
+  backdrop-filter: blur(12px);
+}
+
+.dashboard-page.immersive .notification-dropdown-header {
+  background: transparent;
+  border-bottom: none;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.dashboard-page.immersive .notification-dropdown-item {
+  border-bottom: none;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.dashboard-page.immersive .notification-dropdown-title,
+.dashboard-page.immersive .notification-dropdown-message,
+.dashboard-page.immersive .notification-dropdown-meta {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.dashboard-page.immersive .search-input-container {
+  background: rgba(255, 255, 255, 0.22);
+  border: none;
+  box-shadow: none;
+  backdrop-filter: blur(10px);
+  border-radius: 999px;
+}
+
+.dashboard-page.immersive .search-input,
+.dashboard-page.immersive .search-input::placeholder,
+.dashboard-page.immersive .search-btn,
+.dashboard-page.immersive .clear-btn,
+.dashboard-page.immersive .search-source-select,
+.dashboard-page.immersive .ai-source-select {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.dashboard-page.immersive .search-input::placeholder,
+.dashboard-page.immersive .search-source-label,
+.dashboard-page.immersive .ai-source-label {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.dashboard-page.immersive .search-source-select,
+.dashboard-page.immersive .ai-source-select {
+  background: transparent;
+  color: transparent;
+  text-shadow: 0 0 0 transparent;
+  caret-color: transparent;
+}
+
+.dashboard-page.immersive .search-source-slot {
+  width: 36px;
+}
+
+.dashboard-page.immersive .engine-short {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.dashboard-page.immersive .search-source-select option,
+.dashboard-page.immersive .ai-source-select option {
+  color: #ffffff;
+  background: rgba(15, 23, 42, 0.6);
+}
+
+.dashboard-page.immersive .ai-toggle {
+  background: rgba(15, 23, 42, 0.75);
+  color: #ffffff;
+}
+
+.dashboard-page.immersive .ai-toggle.active {
+  background: rgba(37, 99, 235, 0.9);
+}
+
+.dashboard-page.immersive .top-controls,
+.dashboard-page.immersive .tabs-container,
+.dashboard-page.immersive .grouped-list,
+.dashboard-page.immersive .grouped-section,
+.dashboard-page.immersive .grouped-header,
+.dashboard-page.immersive .grouped-links,
+.dashboard-page.immersive .link-card,
+.dashboard-page.immersive .add-link-card {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.dashboard-page.immersive .link-card {
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+}
+
+.dashboard-page.immersive .add-link-card {
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+}
+
+.dashboard-page.immersive .grouped-name,
+.dashboard-page.immersive .grouped-count,
+.dashboard-page.immersive .link-count,
+.dashboard-page.immersive .card-title,
+.dashboard-page.immersive .card-description,
+.dashboard-page.immersive .card-url,
+.dashboard-page.immersive .card-group,
+.dashboard-page.immersive .active-group-label,
+.dashboard-page.immersive .recommended-title {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.dashboard-page.immersive .edit-mode-btn,
+.dashboard-page.immersive .settings-btn,
+.dashboard-page.immersive .view-mode-btn,
+.dashboard-page.immersive .group-collapse-btn,
+.dashboard-page.immersive .grouped-action,
+.dashboard-page.immersive .tab-action {
+  background: rgba(255, 255, 255, 0.14);
+  border: none;
+  color: rgba(255, 255, 255, 0.9);
+  box-shadow: none;
+}
+
+.dashboard-page.immersive .edit-mode-btn:hover,
+.dashboard-page.immersive .settings-btn:hover,
+.dashboard-page.immersive .view-mode-btn:hover,
+.dashboard-page.immersive .group-collapse-btn:hover,
+.dashboard-page.immersive .grouped-action:hover,
+.dashboard-page.immersive .tab-action:hover {
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+}
+
+.dashboard-page.immersive .view-mode-btn.active {
+  background: rgba(37, 99, 235, 0.8);
+  color: #ffffff;
+}
+
+.dashboard-page.immersive .grouped-system,
+.dashboard-page.immersive .system-group-indicator {
+  background: rgba(245, 158, 11, 0.25);
+  color: #fbbf24;
+  border: none;
+  opacity: 1;
+}
+
+.dashboard-page.immersive .grouped-caret,
+.dashboard-page.immersive .grouped-toggle svg,
+.dashboard-page.immersive .grouped-action svg {
+  opacity: 0.6;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.dashboard-page.immersive .draggable-list-item,
+.dashboard-page.immersive .grouped-section-body.grid-layout .draggable-list-item {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.dashboard-page.immersive .card-icon {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.dashboard-page.immersive .grouped-system svg,
+.dashboard-page.immersive .system-group-indicator svg {
+  opacity: 0.6;
+  color: rgba(251, 191, 36, 0.85);
+}
+
+.dashboard-page.immersive .grouped-toggle:hover .grouped-caret,
+.dashboard-page.immersive .grouped-action:hover svg,
+.dashboard-page.immersive .grouped-header:hover .grouped-system svg,
+.dashboard-page.immersive .system-group-indicator:hover svg {
+  opacity: 0.9;
+}
+
+.dashboard-page.immersive .notification-dropdown,
+.dashboard-page.immersive .sidebar {
+  background: rgba(15, 23, 42, 0.2);
+  border: none;
+  box-shadow: none;
+  backdrop-filter: blur(12px);
+}
+
+.dashboard-page.immersive .sidebar-section,
+.dashboard-page.immersive .sidebar-list,
+.dashboard-page.immersive .sidebar-item {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.dashboard-page.immersive .sidebar-section-header,
+.dashboard-page.immersive .sidebar-section-title,
+.dashboard-page.immersive .sidebar-count,
+.dashboard-page.immersive .sidebar-link-name,
+.dashboard-page.immersive .sidebar-empty,
+.dashboard-page.immersive .sidebar-link-placeholder,
+.dashboard-page.immersive .sidebar-more-item,
+.dashboard-page.immersive .sidebar-pager {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.dashboard-page.immersive .sidebar-link-item {
+  background: transparent;
+  border: none;
+}
+
+.dashboard-page.immersive .sidebar-link-item:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.dashboard-page.immersive .sidebar-toggle {
+  background: rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.9);
+  border: none;
+}
+
+.dashboard-page.immersive .sidebar-toggle:hover {
+  background: rgba(255, 255, 255, 0.28);
 }
 
 /* Transparent Mode */

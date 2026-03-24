@@ -14,6 +14,7 @@ import batchRoutes from './batch';
 import simpleImportExportRoutes from './simpleImportExport';
 import notificationRoutes from './notifications';
 import feedbackRoutes from './feedback';
+import publicConfigRoutes from './publicConfig';
 
 const router = Router();
 
@@ -53,6 +54,9 @@ router.use('/export', exportRoutes);
 
 // Feedback routes
 router.use('/feedback', feedbackRoutes);
+
+// Public configuration (unauthenticated)
+router.use('/public', publicConfigRoutes);
 
 // Batch operations routes
 router.use('/batch', batchRoutes);

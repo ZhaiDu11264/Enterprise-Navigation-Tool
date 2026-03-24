@@ -1,5 +1,6 @@
-import React, { useState, useCallback } from 'react';
+﻿import React, { useState, useCallback } from 'react';
 import { WebsiteLink } from '../../types';
+import { useLanguage } from '../../contexts/LanguageContext';
 import config from '../../config';
 import './SelectableLinkCard.css';
 
@@ -22,15 +23,37 @@ const SelectableLinkCard: React.FC<SelectableLinkCardProps> = ({
   onToggleFavorite,
   selectionMode
 }) => {
+  const { language } = useLanguage();
   const [imageError, setImageError] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+
+  const t = language === 'zh'
+    ? {
+        favorite: '收藏',
+        accessCountTitle: '访问次数',
+        accessCountSuffix: '次访问',
+        removeFavorite: '取消收藏',
+        addFavorite: '添加收藏',
+        edit: '编辑',
+        delete: '删除',
+        systemLink: '系统链接'
+      }
+    : {
+        favorite: 'Favorite',
+        accessCountTitle: 'Access Count',
+        accessCountSuffix: 'visits',
+        removeFavorite: 'Remove Favorite',
+        addFavorite: 'Add Favorite',
+        edit: 'Edit',
+        delete: 'Delete',
+        systemLink: 'System Link'
+      };
 
   const handleCardClick = useCallback((e: React.MouseEvent) => {
     if (selectionMode) {
       e.preventDefault();
       onSelect(link.id, !isSelected);
     } else {
-      // Normal link click behavior
       window.open(link.url, '_blank', 'noopener,noreferrer');
     }
   }, [selectionMode, isSelected, onSelect, link.id, link.url]);
@@ -49,8 +72,7 @@ const SelectableLinkCard: React.FC<SelectableLinkCardProps> = ({
     if (link.iconUrl && !imageError) {
       return link.iconUrl;
     }
-    
-    // Fallback to favicon service
+
     try {
       const domain = new URL(link.url).hostname;
       const template = config.links.faviconFallbackTemplate;
@@ -64,13 +86,12 @@ const SelectableLinkCard: React.FC<SelectableLinkCardProps> = ({
   }, [link.iconUrl, link.url, imageError]);
 
   return (
-    <div 
+    <div
       className={`selectable-link-card ${isSelected ? 'selected' : ''} ${selectionMode ? 'selection-mode' : ''}`}
       onClick={handleCardClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Selection Checkbox */}
       {selectionMode && (
         <div className="selection-checkbox">
           <input
@@ -82,73 +103,59 @@ const SelectableLinkCard: React.FC<SelectableLinkCardProps> = ({
         </div>
       )}
 
-      {/* Link Icon */}
       <div className="link-icon">
-        <img
-          src={getIconUrl()}
-          alt={`${link.name} icon`}
-          onError={() => setImageError(true)}
-          loading="lazy"
-        />
+        <img src={getIconUrl()} alt={`${link.name} icon`} onError={() => setImageError(true)} loading="lazy" />
       </div>
 
-      {/* Link Content */}
       <div className="link-content">
         <div className="link-header">
-          <h3 className="link-name" title={link.name}>
-            {link.name}
-          </h3>
+          <h3 className="link-name" title={link.name}>{link.name}</h3>
           {link.isFavorite && (
-            <span className="favorite-indicator" title="收藏">⭐</span>
+            <span className="favorite-indicator" title={t.favorite}>⭐</span>
           )}
         </div>
 
         {link.description && (
-          <p className="link-description" title={link.description}>
-            {link.description}
-          </p>
+          <p className="link-description" title={link.description}>{link.description}</p>
         )}
 
         <div className="link-meta">
-          <span className="link-url" title={link.url}>
-            {link.url}
-          </span>
+          <span className="link-url" title={link.url}>{link.url}</span>
           {link.accessCount > 0 && (
-            <span className="access-count" title="访问次数">
-              {link.accessCount} 次访问
+            <span className="access-count" title={t.accessCountTitle}>
+              {link.accessCount} {t.accessCountSuffix}
             </span>
           )}
         </div>
       </div>
 
-      {/* Action Buttons */}
       {!selectionMode && (isHovered || window.innerWidth <= 768) && (
         <div className="link-actions">
           {onToggleFavorite && (
             <button
               className={`action-btn favorite-btn ${link.isFavorite ? 'active' : ''}`}
               onClick={(e) => handleActionClick(e, () => onToggleFavorite(link))}
-              title={link.isFavorite ? '取消收藏' : '添加收藏'}
+              title={link.isFavorite ? t.removeFavorite : t.addFavorite}
             >
               {link.isFavorite ? '⭐' : '☆'}
             </button>
           )}
-          
+
           {onEdit && (
             <button
               className="action-btn edit-btn"
               onClick={(e) => handleActionClick(e, () => onEdit(link))}
-              title="编辑"
+              title={t.edit}
             >
               ✏️
             </button>
           )}
-          
+
           {onDelete && link.isDeletable && (
             <button
               className="action-btn delete-btn"
               onClick={(e) => handleActionClick(e, () => onDelete(link))}
-              title="删除"
+              title={t.delete}
             >
               🗑️
             </button>
@@ -156,9 +163,8 @@ const SelectableLinkCard: React.FC<SelectableLinkCardProps> = ({
         </div>
       )}
 
-      {/* System Link Indicator */}
       {link.isSystemLink && (
-        <div className="system-indicator" title="系统链接">
+        <div className="system-indicator" title={t.systemLink}>
           🔒
         </div>
       )}

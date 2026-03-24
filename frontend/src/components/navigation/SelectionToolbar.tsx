@@ -1,5 +1,6 @@
-import React, { useState, useCallback } from 'react';
+﻿import React, { useState, useCallback } from 'react';
 import { WebsiteLink, Group } from '../../types';
+import { useLanguage } from '../../contexts/LanguageContext';
 import './SelectionToolbar.css';
 
 interface SelectionToolbarProps {
@@ -27,14 +28,41 @@ const SelectionToolbar: React.FC<SelectionToolbarProps> = ({
   selectionMode,
   groups
 }) => {
+  const { language } = useLanguage();
   const [showQuickSelect, setShowQuickSelect] = useState(false);
 
-  const currentGroupLinks = currentGroupId 
+  const t = language === 'zh'
+    ? {
+        exitSelectionMode: '退出选择模式',
+        enterSelectionMode: '进入选择模式',
+        batchSelect: '批量选择',
+        selectedCount: (selected: number, total: number) => `已选择 ${selected} / ${total} 个链接`,
+        deselectAll: '全不选',
+        selectAll: '全选',
+        quickSelect: '快速选择',
+        selectFavorites: '选择收藏',
+        selectByGroup: '按分组选择',
+        clearSelection: '清除选择'
+      }
+    : {
+        exitSelectionMode: 'Exit selection mode',
+        enterSelectionMode: 'Enter selection mode',
+        batchSelect: 'Batch Select',
+        selectedCount: (selected: number, total: number) => `Selected ${selected} / ${total} links`,
+        deselectAll: 'Deselect All',
+        selectAll: 'Select All',
+        quickSelect: 'Quick Select',
+        selectFavorites: 'Select Favorites',
+        selectByGroup: 'Select by Group',
+        clearSelection: 'Clear Selection'
+      };
+
+  const currentGroupLinks = currentGroupId
     ? allLinks.filter(link => link.groupId === currentGroupId)
     : allLinks;
 
   const favoriteLinks = allLinks.filter(link => link.isFavorite);
-  const allSelected = currentGroupLinks.length > 0 && 
+  const allSelected = currentGroupLinks.length > 0 &&
     currentGroupLinks.every(link => selectedLinks.some(selected => selected.id === link.id));
   const someSelected = selectedLinks.length > 0;
 
@@ -50,7 +78,6 @@ const SelectionToolbar: React.FC<SelectionToolbarProps> = ({
     const total = currentGroupLinks.length;
     const selected = selectedLinks.length;
     const percentage = total > 0 ? Math.round((selected / total) * 100) : 0;
-    
     return { total, selected, percentage };
   }, [currentGroupLinks.length, selectedLinks.length]);
 
@@ -63,24 +90,19 @@ const SelectionToolbar: React.FC<SelectionToolbarProps> = ({
           <button
             className={`toggle-btn ${selectionMode ? 'active' : ''}`}
             onClick={onToggleSelectionMode}
-            title={selectionMode ? '退出选择模式' : '进入选择模式'}
+            title={selectionMode ? t.exitSelectionMode : t.enterSelectionMode}
           >
-            {selectionMode ? '✓' : '☐'} 批量选择
+            {selectionMode ? '✓' : '☐'} {t.batchSelect}
           </button>
         </div>
 
         {selectionMode && (
           <>
             <div className="selection-stats">
-              <span className="stats-text">
-                已选择 {stats.selected} / {stats.total} 个链接
-              </span>
+              <span className="stats-text">{t.selectedCount(stats.selected, stats.total)}</span>
               {stats.selected > 0 && (
                 <div className="progress-bar">
-                  <div 
-                    className="progress-fill"
-                    style={{ width: `${stats.percentage}%` }}
-                  />
+                  <div className="progress-fill" style={{ width: `${stats.percentage}%` }} />
                 </div>
               )}
             </div>
@@ -91,7 +113,7 @@ const SelectionToolbar: React.FC<SelectionToolbarProps> = ({
                 onClick={allSelected ? onSelectNone : handleSelectCurrentGroup}
                 disabled={currentGroupLinks.length === 0}
               >
-                {allSelected ? '全不选' : '全选'}
+                {allSelected ? t.deselectAll : t.selectAll}
               </button>
 
               <div className="quick-select-dropdown">
@@ -99,7 +121,7 @@ const SelectionToolbar: React.FC<SelectionToolbarProps> = ({
                   className="quick-btn dropdown-toggle"
                   onClick={() => setShowQuickSelect(!showQuickSelect)}
                 >
-                  快速选择 ▼
+                  {t.quickSelect} ▼
                 </button>
 
                 {showQuickSelect && (
@@ -112,13 +134,13 @@ const SelectionToolbar: React.FC<SelectionToolbarProps> = ({
                       }}
                       disabled={favoriteLinks.length === 0}
                     >
-                      选择收藏 ({favoriteLinks.length})
+                      {t.selectFavorites} ({favoriteLinks.length})
                     </button>
 
                     <div className="dropdown-divider" />
 
                     <div className="dropdown-section">
-                      <span className="dropdown-label">按分组选择:</span>
+                      <span className="dropdown-label">{t.selectByGroup}:</span>
                       {groups.map(group => {
                         const groupLinks = allLinks.filter(link => link.groupId === group.id);
                         return (
@@ -141,11 +163,8 @@ const SelectionToolbar: React.FC<SelectionToolbarProps> = ({
               </div>
 
               {someSelected && (
-                <button
-                  className="quick-btn clear-btn"
-                  onClick={onSelectNone}
-                >
-                  清除选择
+                <button className="quick-btn clear-btn" onClick={onSelectNone}>
+                  {t.clearSelection}
                 </button>
               )}
             </div>
@@ -153,12 +172,8 @@ const SelectionToolbar: React.FC<SelectionToolbarProps> = ({
         )}
       </div>
 
-      {/* Click outside to close dropdown */}
       {showQuickSelect && (
-        <div 
-          className="dropdown-backdrop"
-          onClick={() => setShowQuickSelect(false)}
-        />
+        <div className="dropdown-backdrop" onClick={() => setShowQuickSelect(false)} />
       )}
     </div>
   );

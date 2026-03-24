@@ -6,6 +6,14 @@ import { authenticateToken } from '../middleware/auth';
 import { logAudit } from '../utils/audit';
 
 const router = Router();
+const syncDefaultConfigForAdmin = async (userId: number, reason: string) => {
+  try {
+    await ConfigurationService.rebuildFromAdmin(userId, reason);
+  } catch (error) {
+    console.error('Auto rebuild default configuration failed:', error);
+  }
+};
+const lockedGroupNames = new Set(['内部办公', '农投AI创意事业部', '热门推荐']);
 
 // Helper function to get request ID
 const getRequestId = (req: Request): string => {
@@ -34,16 +42,13 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    let groups = await GroupService.getUserGroups(req.user!.userId);
-    const hasSystemGroup = groups.some(group => group.isSystemGroup);
-
-    if (!hasSystemGroup) {
-      const activeConfig = await ConfigurationService.getActiveConfiguration();
-      if (activeConfig) {
-        await ConfigurationService.applyToUser(req.user!.userId, activeConfig.id, 'merge');
-        groups = await GroupService.getUserGroups(req.user!.userId);
-      }
+    // Always sync from active default configuration so system groups come from admin config
+    const activeConfig = await ConfigurationService.getActiveConfiguration();
+    if (activeConfig) {
+      await ConfigurationService.applyToUser(req.user!.userId, activeConfig.id, 'sync');
     }
+
+    const groups = await GroupService.getUserGroups(req.user!.userId);
 
     res.status(200).json({
       success: true,
@@ -218,6 +223,19 @@ router.post('/', [
 
     const { name, description, sortOrder, isSystemGroup: requestedSystemGroup, isDeletable: requestedDeletable } = req.body;
 
+    if (req.user.role !== 'admin' && lockedGroupNames.has(name)) {
+      res.status(403).json({
+        error: {
+          code: 'GROUP_NAME_LOCKED',
+          message: 'This group is managed by the administrator',
+          timestamp: new Date().toISOString(),
+          requestId: getRequestId(req)
+        }
+      });
+      return;
+    }
+
+
     if (requestedSystemGroup && req.user.role !== 'admin') {
       res.status(403).json({
         error: {
@@ -262,6 +280,10 @@ router.post('/', [
       entityId: newGroup.id,
       description: `Created group "${newGroup.name}"`
     });
+
+    if (req.user.role === 'admin') {
+      await syncDefaultConfigForAdmin(req.user.userId, 'Auto rebuild after group.create');
+    }
 
     res.status(201).json({
       success: true,
@@ -335,13 +357,61 @@ router.put('/:id', [
       return;
     }
 
-    const groupId = parseInt(req.params.id!);
+  const groupId = parseInt(req.params.id!);
     const updates = req.body;
+
+    const existingGroup = await GroupService.getGroupById(groupId);
+    if (!existingGroup) {
+      res.status(404).json({
+        error: {
+          code: 'GROUP_NOT_FOUND',
+          message: 'Group not found',
+          timestamp: new Date().toISOString(),
+          requestId: getRequestId(req)
+        }
+      });
+      return;
+    }
+
+    if (existingGroup.isSystemGroup && req.user!.role !== 'admin') {
+      res.status(403).json({
+        error: {
+          code: 'INSUFFICIENT_PERMISSIONS',
+          message: 'Only administrators can edit system groups',
+          timestamp: new Date().toISOString(),
+          requestId: getRequestId(req)
+        }
+      });
+      return;
+    }
+
+    if (req.user!.role !== 'admin' && lockedGroupNames.has(existingGroup.name)) {
+      res.status(403).json({
+        error: {
+          code: 'GROUP_LOCKED',
+          message: 'This group is managed by the administrator',
+          timestamp: new Date().toISOString(),
+          requestId: getRequestId(req)
+        }
+      });
+      return;
+    }
 
     // If name is being updated, check if it already exists for this user
     if (updates.name) {
-      const existingGroup = await GroupService.getGroupByName(req.user!.userId, updates.name);
-      if (existingGroup && existingGroup.id !== groupId) {
+      if (req.user!.role !== 'admin' && lockedGroupNames.has(updates.name)) {
+        res.status(403).json({
+          error: {
+            code: 'GROUP_NAME_LOCKED',
+            message: 'This group is managed by the administrator',
+            timestamp: new Date().toISOString(),
+            requestId: getRequestId(req)
+          }
+        });
+        return;
+      }
+      const duplicateGroup = await GroupService.getGroupByName(req.user!.userId, updates.name);
+      if (duplicateGroup && duplicateGroup.id !== groupId) {
         res.status(409).json({
           error: {
             code: 'GROUP_NAME_EXISTS',
@@ -355,6 +425,9 @@ router.put('/:id', [
     }
 
     const updatedGroup = await GroupService.updateGroup(groupId, req.user!.userId, updates);
+    if (updatedGroup.isSystemGroup) {
+      await GroupService.autoSyncToDefaultConfig(req.user!.userId, updatedGroup);
+    }
 
     await logAudit(req, {
       userId: req.user.userId,
@@ -363,6 +436,10 @@ router.put('/:id', [
       entityId: updatedGroup.id,
       description: `Updated group "${updatedGroup.name}"`
     });
+
+    if (req.user.role === 'admin') {
+      await syncDefaultConfigForAdmin(req.user.userId, 'Auto rebuild after group.update');
+    }
 
     res.status(200).json({
       success: true,
@@ -434,7 +511,47 @@ router.delete('/:id', [
     }
 
     const groupId = parseInt(req.params.id!);
-    await GroupService.deleteGroup(groupId, req.user!.userId);
+    const group = await GroupService.getGroupById(groupId);
+    if (!group) {
+      res.status(404).json({
+        error: {
+          code: 'GROUP_NOT_FOUND',
+          message: 'Group not found or access denied',
+          timestamp: new Date().toISOString(),
+          requestId: getRequestId(req)
+        }
+      });
+      return;
+    }
+
+    if (group.isSystemGroup && req.user!.role !== 'admin') {
+      res.status(403).json({
+        error: {
+          code: 'SYSTEM_GROUP_PROTECTED',
+          message: 'Cannot delete system group',
+          timestamp: new Date().toISOString(),
+          requestId: getRequestId(req)
+        }
+      });
+      return;
+    }
+
+    if (req.user!.role !== 'admin' && lockedGroupNames.has(group.name)) {
+      res.status(403).json({
+        error: {
+          code: 'GROUP_LOCKED',
+          message: 'This group is managed by the administrator',
+          timestamp: new Date().toISOString(),
+          requestId: getRequestId(req)
+        }
+      });
+      return;
+    }
+
+    await GroupService.deleteGroup(groupId, req.user!.userId, { allowSystemDelete: req.user!.role === 'admin' });
+    if (group.isSystemGroup && req.user!.role === 'admin') {
+      await GroupService.removeSystemGroupFromDefaultConfig(req.user!.userId, group.name);
+    }
 
     await logAudit(req, {
       userId: req.user.userId,
@@ -443,6 +560,10 @@ router.delete('/:id', [
       entityId: groupId,
       description: 'Deleted group'
     });
+
+    if (req.user.role === 'admin') {
+      await syncDefaultConfigForAdmin(req.user.userId, 'Auto rebuild after group.delete');
+    }
 
     res.status(200).json({
       success: true,
@@ -543,6 +664,23 @@ router.put('/reorder', [
       return;
     }
 
+    if (req.user.role !== 'admin') {
+      for (const order of groupOrders) {
+        const group = await GroupService.getGroupById(order.id);
+        if (group && lockedGroupNames.has(group.name)) {
+          res.status(403).json({
+            error: {
+              code: 'GROUP_LOCKED',
+              message: 'This group is managed by the administrator',
+              timestamp: new Date().toISOString(),
+              requestId: getRequestId(req)
+            }
+          });
+          return;
+        }
+      }
+    }
+
     await GroupService.reorderGroups(req.user.userId, groupOrders);
 
     await logAudit(req, {
@@ -551,6 +689,10 @@ router.put('/reorder', [
       entityType: 'group',
       description: `Reordered ${groupOrders.length} groups`
     });
+
+    if (req.user.role === 'admin') {
+      await syncDefaultConfigForAdmin(req.user.userId, 'Auto rebuild after group.reorder');
+    }
 
     res.status(200).json({
       success: true,

@@ -82,7 +82,7 @@ function DraggableTab({
     >
       <span className="tab-label">{group.name}</span>
       
-      {(Boolean(onEdit && (!group.isSystemGroup || allowSystemEdit)) || Boolean(onDelete && group.isDeletable)) ? (
+      {(Boolean(onEdit && (!group.isSystemGroup || allowSystemEdit)) || Boolean(onDelete && (group.isDeletable || allowSystemEdit))) ? (
         <div className="tab-actions">
           {onEdit && (!group.isSystemGroup || allowSystemEdit) && (
             <button
@@ -96,7 +96,7 @@ function DraggableTab({
             </button>
           )}
           
-          {onDelete && group.isDeletable && (
+          {onDelete && (group.isDeletable || allowSystemEdit) && (
             <button
               className="tab-action delete"
               onClick={handleDeleteClick}

@@ -10,6 +10,10 @@ interface SearchInterfaceProps {
   onQueryChange?: (query: string) => void;
   placeholder?: string;
   className?: string;
+  externalSearchUrl?: (query: string) => string;
+  searchEngines?: Array<{ id: string; label: string; buildUrl: (query: string) => string }>;
+  aiSearchEngines?: Array<{ id: string; label: string; buildUrl: (query: string) => string }>;
+  disableInternalSearch?: boolean;
 }
 
 export function SearchInterface({
@@ -17,7 +21,11 @@ export function SearchInterface({
   onSearchResultsChange,
   onQueryChange,
   placeholder,
-  className = ""
+  className = "",
+  externalSearchUrl,
+  searchEngines,
+  aiSearchEngines,
+  disableInternalSearch = false
 }: SearchInterfaceProps) {
   const { language } = useLanguage();
   const translations = {
@@ -25,6 +33,9 @@ export function SearchInterface({
       placeholder: 'Search links...',
       clear: 'Clear search',
       search: 'Search',
+      aiSearch: 'AI Search',
+      engine: 'Engine',
+      aiEngine: 'AI',
       suggestionsFailed: 'Failed to load suggestions',
       searchFailed: 'Search failed. Please try again.',
       found: (count: number, query: string) => `Found ${count} result${count !== 1 ? 's' : ''} for "${query}"`
@@ -33,6 +44,9 @@ export function SearchInterface({
       placeholder: '\u641c\u7d22\u94fe\u63a5...',
       clear: '\u6e05\u7a7a\u641c\u7d22',
       search: '\u641c\u7d22',
+      aiSearch: '\u0041\u0049\u641c\u7d22',
+      engine: '\u641c\u7d22\u6e90',
+      aiEngine: '\u0041\u0049',
       suggestionsFailed: '\u52a0\u8f7d\u5efa\u8bae\u5931\u8d25',
       searchFailed: '\u641c\u7d22\u5931\u8d25\uff0c\u8bf7\u91cd\u8bd5\u3002',
       found: (count: number, query: string) => `\u627e\u5230${count}\u6761\u7ed3\u679c\uff1a\u201c${query}\u201d`
@@ -40,6 +54,17 @@ export function SearchInterface({
   } as const;
   const t = translations[language];
   const resolvedPlaceholder = placeholder ?? t.placeholder;
+  const resolvedSearchEngines = searchEngines ?? [];
+  const resolvedAiEngines = aiSearchEngines ?? [];
+  const [activeSearchEngineId, setActiveSearchEngineId] = useState(
+    resolvedSearchEngines[0]?.id ?? ''
+  );
+  const [activeAiEngineId, setActiveAiEngineId] = useState(
+    resolvedAiEngines[0]?.id ?? ''
+  );
+  const [searchMode, setSearchMode] = useState<'web' | 'ai'>(
+    resolvedAiEngines.length > 0 ? 'web' : 'web'
+  );
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<WebsiteLink[]>([]);
   const [suggestions, setSuggestions] = useState<WebsiteLink[]>([]);
@@ -48,12 +73,41 @@ export function SearchInterface({
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [error, setError] = useState<string | null>(null);
 
+  const activeSearchEngine = resolvedSearchEngines.find(engine => engine.id === activeSearchEngineId);
+  const activeAiEngine = resolvedAiEngines.find(engine => engine.id === activeAiEngineId);
+  const shortLabel = (label: string | undefined) => {
+    const trimmed = (label ?? '').trim();
+    return trimmed ? trimmed[0] : '';
+  };
+
   const searchInputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (resolvedSearchEngines.length > 0) {
+      const exists = resolvedSearchEngines.some(engine => engine.id === activeSearchEngineId);
+      if (!exists) {
+        setActiveSearchEngineId(resolvedSearchEngines[0].id);
+      }
+    }
+  }, [resolvedSearchEngines, activeSearchEngineId]);
+
+  useEffect(() => {
+    if (resolvedAiEngines.length > 0) {
+      const exists = resolvedAiEngines.some(engine => engine.id === activeAiEngineId);
+      if (!exists) {
+        setActiveAiEngineId(resolvedAiEngines[0].id);
+      }
+    }
+  }, [resolvedAiEngines, activeAiEngineId]);
 
   // Debounced search for suggestions
   const debouncedSearch = useMemo(() => (
     SearchService.debounce(async (searchQuery: string) => {
+      if (disableInternalSearch) {
+        return;
+      }
+
       if (searchQuery.trim().length === 0) {
         setSuggestions([]);
         setShowSuggestions(false);
@@ -79,7 +133,7 @@ export function SearchInterface({
         setIsSearching(false);
       }
     }, 300)
-  ), [t.suggestionsFailed]);
+  ), [disableInternalSearch, t.suggestionsFailed]);
 
   // Handle input change
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -104,7 +158,26 @@ export function SearchInterface({
       setIsSearching(true);
       setError(null);
       setShowSuggestions(false);
-      
+
+      if (disableInternalSearch) {
+        if (searchMode === 'ai') {
+          const selectedAiEngine = resolvedAiEngines.find(engine => engine.id === activeAiEngineId);
+          const aiUrl = selectedAiEngine?.buildUrl(finalQuery);
+          if (aiUrl) {
+            window.open(aiUrl, '_blank', 'noopener,noreferrer');
+          }
+        } else {
+          const selectedEngine = resolvedSearchEngines.find(engine => engine.id === activeSearchEngineId);
+          const searchUrl = selectedEngine?.buildUrl(finalQuery) ?? externalSearchUrl?.(finalQuery);
+          if (searchUrl) {
+            window.open(searchUrl, '_blank', 'noopener,noreferrer');
+          }
+        }
+        setResults([]);
+        onSearchResultsChange?.([]);
+        return;
+      }
+
       const response = await SearchService.searchLinks(finalQuery);
       setResults(response.results);
       onSearchResultsChange?.(response.results);
@@ -116,6 +189,13 @@ export function SearchInterface({
     } finally {
       setIsSearching(false);
     }
+  };
+
+  const handleToggleMode = () => {
+    if (resolvedAiEngines.length === 0) {
+      return;
+    }
+    setSearchMode(prev => (prev === 'web' ? 'ai' : 'web'));
   };
 
   // Handle form submission
@@ -199,7 +279,45 @@ export function SearchInterface({
   return (
     <div className={`search-interface ${className}`}>
       <form onSubmit={handleSubmit} className="search-form">
-        <div className="search-input-container">
+        <div className={`search-input-container ${searchMode === 'ai' ? 'ai-mode' : 'web-mode'}`}>
+          {(resolvedSearchEngines.length > 0 || resolvedAiEngines.length > 0) && (
+            <div className="search-source-slot">
+              <label className={`search-source ${searchMode === 'web' ? 'active' : 'hidden'}`}>
+              <span className="engine-short" aria-hidden="true">
+                {shortLabel(activeSearchEngine?.label)}
+              </span>
+              <select
+                className="search-source-select"
+                value={activeSearchEngineId}
+                onChange={(event) => setActiveSearchEngineId(event.target.value)}
+                aria-label={activeSearchEngine?.label ?? t.engine}
+              >
+                {resolvedSearchEngines.map((engine) => (
+                  <option key={engine.id} value={engine.id}>
+                    {engine.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+              <label className={`ai-source ${searchMode === 'ai' ? 'active' : 'hidden'}`}>
+              <span className="engine-short" aria-hidden="true">
+                {shortLabel(activeAiEngine?.label)}
+              </span>
+              <select
+                className="ai-source-select"
+                value={activeAiEngineId}
+                onChange={(event) => setActiveAiEngineId(event.target.value)}
+                aria-label={activeAiEngine?.label ?? t.aiEngine}
+              >
+                {resolvedAiEngines.map((engine) => (
+                  <option key={engine.id} value={engine.id}>
+                    {engine.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            </div>
+          )}
           <input
             ref={searchInputRef}
             type="text"
@@ -239,9 +357,32 @@ export function SearchInterface({
               {isSearching ? (
                 <div className="spinner" />
               ) : (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
-                </svg>
+                <>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                  </svg>
+                  {resolvedAiEngines.length > 0 && (
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      className={`ai-toggle ${searchMode === 'ai' ? 'active' : ''}`}
+                      title={t.aiSearch}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        handleToggleMode();
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          handleToggleMode();
+                        }
+                      }}
+                    >
+                      AI
+                    </span>
+                  )}
+                </>
               )}
             </button>
           </div>

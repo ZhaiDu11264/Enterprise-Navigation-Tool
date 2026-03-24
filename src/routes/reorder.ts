@@ -2,11 +2,20 @@ import { Router, Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
 import { LinkService } from '../models/WebsiteLink';
 import { GroupService } from '../models/Group';
+import { ConfigurationService } from '../models/DefaultConfiguration';
 import { authenticateToken } from '../middleware/auth';
 import { LinkOrder } from '../models/interfaces';
 import { logAudit } from '../utils/audit';
 
 const router = Router();
+const syncDefaultConfigForAdmin = async (userId: number, reason: string) => {
+  try {
+    await ConfigurationService.rebuildFromAdmin(userId, reason);
+  } catch (error) {
+    console.error('Auto rebuild default configuration failed:', error);
+  }
+};
+const lockedGroupNames = new Set(['内部办公', '农投AI创意事业部', '热门推荐']);
 
 // Helper function to get request ID
 const getRequestId = (req: Request): string => {
@@ -100,6 +109,55 @@ router.put('/batch', [
       }
     }
 
+    if (req.user.role !== 'admin') {
+      for (const groupOrder of groupOperations) {
+        const group = await GroupService.getGroupById(groupOrder.id);
+        if (group && lockedGroupNames.has(group.name)) {
+          res.status(403).json({
+            error: {
+              code: 'GROUP_LOCKED',
+              message: 'This group is managed by the administrator',
+              timestamp: new Date().toISOString(),
+              requestId: getRequestId(req)
+            }
+          });
+          return;
+        }
+      }
+
+      for (const linkOrder of linkOperations) {
+        const link = await LinkService.getLinkById(linkOrder.id);
+        if (link) {
+          const currentGroup = await GroupService.getGroupById(link.groupId);
+          if (currentGroup && lockedGroupNames.has(currentGroup.name)) {
+            res.status(403).json({
+              error: {
+                code: 'GROUP_LOCKED',
+                message: 'This group is managed by the administrator',
+                timestamp: new Date().toISOString(),
+                requestId: getRequestId(req)
+              }
+            });
+            return;
+          }
+        }
+        if (linkOrder.groupId) {
+          const targetGroup = await GroupService.getGroupById(linkOrder.groupId);
+          if (targetGroup && lockedGroupNames.has(targetGroup.name)) {
+            res.status(403).json({
+              error: {
+                code: 'GROUP_LOCKED',
+                message: 'This group is managed by the administrator',
+                timestamp: new Date().toISOString(),
+                requestId: getRequestId(req)
+              }
+            });
+            return;
+          }
+        }
+      }
+    }
+
     // Execute operations in sequence to maintain consistency
     if (groupOperations.length > 0) {
       await GroupService.reorderGroups(req.user.userId, groupOperations);
@@ -114,6 +172,10 @@ router.put('/batch', [
       action: 'reorder.batch',
       description: `Batch reorder: ${linkOperations.length} links, ${groupOperations.length} groups`
     });
+
+    if (req.user.role === 'admin') {
+      await syncDefaultConfigForAdmin(req.user.userId, 'Auto rebuild after reorder.batch');
+    }
 
     res.status(200).json({
       success: true,
@@ -214,6 +276,40 @@ router.put('/links', [
       return;
     }
 
+    if (req.user.role !== 'admin') {
+      for (const linkOrder of linkOrders as LinkOrder[]) {
+        const link = await LinkService.getLinkById(linkOrder.id);
+        if (link) {
+          const currentGroup = await GroupService.getGroupById(link.groupId);
+          if (currentGroup && lockedGroupNames.has(currentGroup.name)) {
+            res.status(403).json({
+              error: {
+                code: 'GROUP_LOCKED',
+                message: 'This group is managed by the administrator',
+                timestamp: new Date().toISOString(),
+                requestId: getRequestId(req)
+              }
+            });
+            return;
+          }
+        }
+        if (linkOrder.groupId) {
+          const targetGroup = await GroupService.getGroupById(linkOrder.groupId);
+          if (targetGroup && lockedGroupNames.has(targetGroup.name)) {
+            res.status(403).json({
+              error: {
+                code: 'GROUP_LOCKED',
+                message: 'This group is managed by the administrator',
+                timestamp: new Date().toISOString(),
+                requestId: getRequestId(req)
+              }
+            });
+            return;
+          }
+        }
+      }
+    }
+
     await LinkService.reorderLinks(req.user.userId, linkOrders as LinkOrder[]);
 
     await logAudit(req, {
@@ -221,6 +317,10 @@ router.put('/links', [
       action: 'reorder.links',
       description: `Reordered ${linkOrders.length} links`
     });
+
+    if (req.user.role === 'admin') {
+      await syncDefaultConfigForAdmin(req.user.userId, 'Auto rebuild after reorder.links');
+    }
 
     res.status(200).json({
       success: true,
@@ -315,6 +415,23 @@ router.put('/groups', [
       return;
     }
 
+    if (req.user.role !== 'admin') {
+      for (const order of groupOrders) {
+        const group = await GroupService.getGroupById(order.id);
+        if (group && lockedGroupNames.has(group.name)) {
+          res.status(403).json({
+            error: {
+              code: 'GROUP_LOCKED',
+              message: 'This group is managed by the administrator',
+              timestamp: new Date().toISOString(),
+              requestId: getRequestId(req)
+            }
+          });
+          return;
+        }
+      }
+    }
+
     await GroupService.reorderGroups(req.user.userId, groupOrders);
 
     await logAudit(req, {
@@ -322,6 +439,10 @@ router.put('/groups', [
       action: 'reorder.groups',
       description: `Reordered ${groupOrders.length} groups`
     });
+
+    if (req.user.role === 'admin') {
+      await syncDefaultConfigForAdmin(req.user.userId, 'Auto rebuild after reorder.groups');
+    }
 
     res.status(200).json({
       success: true,

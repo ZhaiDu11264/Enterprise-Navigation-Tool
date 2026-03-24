@@ -11,17 +11,24 @@ interface SettingsContextValue {
   setDarkMode: (enabled: boolean) => void;
   compactMode: boolean;
   setCompactMode: (enabled: boolean) => void;
-  transparentMode: boolean;
-  setTransparentMode: (enabled: boolean) => void;
 }
 
 const SettingsContext = createContext<SettingsContextValue | undefined>(undefined);
 
+const DEFAULTS_VERSION = 'v2';
+
+const shouldApplyDefaults = (): boolean => {
+  return localStorage.getItem('ui_defaults_version') !== DEFAULTS_VERSION;
+};
+
 const getInitialGridSize = (): GridSize => {
+  if (shouldApplyDefaults()) {
+    return 'small';
+  }
   const stored = localStorage.getItem('ui_grid_size') as GridSize | null;
-  return stored === 'small' || stored === 'medium' || stored === 'large' || stored === 'extra-large' 
-    ? stored 
-    : 'medium';
+  return stored === 'small' || stored === 'medium' || stored === 'large' || stored === 'extra-large'
+    ? stored
+    : 'small';
 };
 
 // Grid size configurations - controls card size, icon and text scale together
@@ -62,11 +69,17 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     localStorage.getItem('ui_dark_mode') === 'true'
   );
   const [compactMode, setCompactMode] = useState(() => 
-    localStorage.getItem('ui_compact_mode') === 'true'
+    shouldApplyDefaults()
+      ? true
+      : localStorage.getItem('ui_compact_mode') === 'true' || !localStorage.getItem('ui_compact_mode')
   );
-  const [transparentMode, setTransparentMode] = useState(() => 
-    localStorage.getItem('ui_transparent_mode') === 'true'
-  );
+
+  useEffect(() => {
+    if (!shouldApplyDefaults()) {
+      return;
+    }
+    localStorage.setItem('ui_defaults_version', DEFAULTS_VERSION);
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('ui_grid_size', gridSize);
@@ -88,13 +101,13 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   }, [darkMode]);
 
   useEffect(() => {
-    localStorage.setItem('ui_compact_mode', String(compactMode));
-  }, [compactMode]);
+    document.body.classList.remove('transparent-mode');
+    localStorage.removeItem('ui_transparent_mode');
+  }, []);
 
   useEffect(() => {
-    document.body.classList.toggle('transparent-mode', transparentMode);
-    localStorage.setItem('ui_transparent_mode', String(transparentMode));
-  }, [transparentMode]);
+    localStorage.setItem('ui_compact_mode', String(compactMode));
+  }, [compactMode]);
 
 
   const getGridColumns = useCallback(() => {
@@ -115,10 +128,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     darkMode,
     setDarkMode,
     compactMode,
-    setCompactMode,
-    transparentMode,
-    setTransparentMode
-  }), [gridSize, getGridColumns, getCompactGridColumns, darkMode, compactMode, transparentMode]);
+    setCompactMode
+  }), [gridSize, getGridColumns, getCompactGridColumns, darkMode, compactMode]);
 
   return (
     <SettingsContext.Provider value={value}>

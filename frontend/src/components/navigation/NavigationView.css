@@ -139,6 +139,18 @@ body.theme-dark.transparent-mode .top-controls {
   color: #4dabf7;
 }
 
+.edit-mode-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  border-color: #d1d5db;
+  color: #94a3b8;
+}
+
+.edit-mode-btn:disabled:hover {
+  border-color: #d1d5db;
+  color: #94a3b8;
+}
+
 .view-mode-btn {
   display: flex;
   align-items: center;
@@ -198,6 +210,17 @@ body.theme-dark .link-count {
 .navigation-content {
   flex: 1;
   min-height: 200px;
+}
+
+.recommended-section {
+  margin-top: 1.5rem;
+}
+
+.recommended-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 0.75rem;
 }
 
 .active-group-label {
