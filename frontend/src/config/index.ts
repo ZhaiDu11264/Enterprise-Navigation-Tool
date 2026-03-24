@@ -1,7 +1,7 @@
 // Application configuration
 export const config = {
   api: {
-    baseUrl: process.env.REACT_APP_API_URL || 'http://localhost:3000/api',
+    baseUrl: process.env.REACT_APP_API_URL || '/api',
     timeout: 10000,
   },
   app: {
