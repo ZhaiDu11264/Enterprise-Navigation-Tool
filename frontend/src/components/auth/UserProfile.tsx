@@ -48,6 +48,16 @@ export function UserProfile({
       notificationsLabel: 'Notifications',
       feedbackTitle: 'Send feedback',
       notificationsTitle: 'Open notifications',
+      changePassword: 'Change password',
+      currentPassword: 'Current password',
+      newPassword: 'New password',
+      confirmPassword: 'Confirm new password',
+      passwordHint: 'Leave blank if you do not want to change it.',
+      passwordMismatch: 'New passwords do not match.',
+      passwordTooShort: 'Password must be at least 6 characters.',
+      passwordRequired: 'Please fill all password fields.',
+      passwordUpdated: 'Password updated successfully.',
+      passwordUpdateFailed: 'Failed to update password.',
       save: 'Save',
       cancel: 'Cancel',
       logout: 'Log out'
@@ -76,6 +86,16 @@ export function UserProfile({
       notificationsLabel: '\u901a\u77e5',
       feedbackTitle: '\u53cd\u9988',
       notificationsTitle: '\u67e5\u770b\u901a\u77e5',
+      changePassword: '\u4fee\u6539\u5bc6\u7801',
+      currentPassword: '\u5f53\u524d\u5bc6\u7801',
+      newPassword: '\u65b0\u5bc6\u7801',
+      confirmPassword: '\u786e\u8ba4\u65b0\u5bc6\u7801',
+      passwordHint: '\u4e0d\u9700\u4fee\u6539\u65f6\u53ef\u7559\u7a7a\u3002',
+      passwordMismatch: '\u4e24\u6b21\u8f93\u5165\u7684\u65b0\u5bc6\u7801\u4e0d\u4e00\u81f4\u3002',
+      passwordTooShort: '\u5bc6\u7801\u81f3\u5c11 6 \u4f4d\u3002',
+      passwordRequired: '\u8bf7\u5b8c\u6574\u586b\u5199\u5bc6\u7801\u4fe1\u606f\u3002',
+      passwordUpdated: '\u5bc6\u7801\u5df2\u66f4\u65b0\u3002',
+      passwordUpdateFailed: '\u5bc6\u7801\u4fee\u6539\u5931\u8d25\u3002',
       save: '\u4fdd\u5b58',
       cancel: '\u53d6\u6d88',
       logout: '\u9000\u51fa\u767b\u5f55'
@@ -88,6 +108,13 @@ export function UserProfile({
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [showPasswordPanel, setShowPasswordPanel] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importLoading, setImportLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
@@ -114,6 +141,12 @@ export function UserProfile({
     setImportFile(null);
     setImportMessage(null);
     setImportError(null);
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setPasswordError(null);
+    setPasswordSuccess(null);
+    setShowPasswordPanel(false);
   }, [isModalOpen, resolvedDisplayName, userId, userAvatarUrl]);
 
 
@@ -221,7 +254,7 @@ export function UserProfile({
     }
   };
 
-  const handleSave = async () => {
+  const handleSaveProfile = async () => {
     if (!user) return;
     setIsSaving(true);
     try {
@@ -252,6 +285,44 @@ export function UserProfile({
       console.error('Failed to update profile:', error);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!user) return;
+    setPasswordError(null);
+    setPasswordSuccess(null);
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setPasswordError(t.passwordRequired);
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPasswordError(t.passwordTooShort);
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError(t.passwordMismatch);
+      return;
+    }
+
+    setPasswordLoading(true);
+    try {
+      await userService.changePassword({
+        currentPassword,
+        newPassword,
+        confirmPassword
+      });
+      setPasswordSuccess(t.passwordUpdated);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setShowPasswordPanel(false);
+    } catch (error) {
+      console.error('Failed to update password:', error);
+      setPasswordError(t.passwordUpdateFailed);
+    } finally {
+      setPasswordLoading(false);
     }
   };
 
@@ -338,6 +409,76 @@ export function UserProfile({
               <div className="profile-hint">{t.displayNameHint}</div>
             </div>
 
+            <div className="profile-password-card">
+              <div className="profile-password-header">
+                <div>
+                  <div className="profile-password-title">{t.changePassword}</div>
+                  <div className="profile-hint">{t.passwordHint}</div>
+                </div>
+                <button
+                  type="button"
+                  className="profile-btn secondary"
+                  onClick={() => setShowPasswordPanel((prev) => !prev)}
+                >
+                  {t.changePassword}
+                </button>
+              </div>
+              {showPasswordPanel && (
+                <div className="profile-password-body">
+                  <div className="profile-form-group">
+                    <label htmlFor="currentPassword">{t.currentPassword}</label>
+                    <input
+                      id="currentPassword"
+                      type="password"
+                      value={currentPassword}
+                      onChange={(event) => setCurrentPassword(event.target.value)}
+                      autoComplete="current-password"
+                    />
+                  </div>
+                  <div className="profile-form-group">
+                    <label htmlFor="newPassword">{t.newPassword}</label>
+                    <input
+                      id="newPassword"
+                      type="password"
+                      value={newPassword}
+                      onChange={(event) => setNewPassword(event.target.value)}
+                      autoComplete="new-password"
+                    />
+                  </div>
+                  <div className="profile-form-group">
+                    <label htmlFor="confirmPassword">{t.confirmPassword}</label>
+                    <input
+                      id="confirmPassword"
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(event) => setConfirmPassword(event.target.value)}
+                      autoComplete="new-password"
+                    />
+                  </div>
+                  {passwordError && <div className="profile-password-error">{passwordError}</div>}
+                  {passwordSuccess && <div className="profile-password-success">{passwordSuccess}</div>}
+                  <div className="profile-password-actions">
+                    <button
+                      type="button"
+                      className="profile-btn secondary"
+                      onClick={() => setShowPasswordPanel(false)}
+                      disabled={passwordLoading}
+                    >
+                      {t.cancel}
+                    </button>
+                    <button
+                      type="button"
+                      className="profile-btn primary"
+                      onClick={handleChangePassword}
+                      disabled={passwordLoading}
+                    >
+                      {t.save}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="profile-import-export">
               <div className="profile-import-export-header">
                 <div className="profile-import-title">
@@ -392,8 +533,8 @@ export function UserProfile({
               <button
                 type="button"
                 className="profile-btn primary"
-                onClick={handleSave}
-                disabled={isSaving}
+                onClick={handleSaveProfile}
+                disabled={isSaving || passwordLoading}
               >
                 {t.save}
               </button>

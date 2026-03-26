@@ -25,5 +25,9 @@ export const userService = {
       avatarUrl: avatarUrl || '',
       user
     };
+  },
+
+  async changePassword(payload: { currentPassword: string; newPassword: string; confirmPassword: string }): Promise<void> {
+    await api.post('/users/change-password', payload);
   }
 };

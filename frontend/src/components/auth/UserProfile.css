@@ -314,6 +314,53 @@ body.theme-dark .user-profile.compact .user-info .username {
   color: #94a3b8;
 }
 
+.profile-password-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 1rem;
+}
+
+.profile-password-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.profile-password-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.profile-password-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.profile-password-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.profile-password-error {
+  font-size: 0.85rem;
+  color: #dc2626;
+}
+
+.profile-password-success {
+  font-size: 0.85rem;
+  color: #16a34a;
+}
+
 
 .profile-import-export {
   display: flex;
@@ -508,6 +555,27 @@ body.theme-dark .profile-upload-btn {
   background: #111827;
   border-color: #1f2937;
   color: #93c5fd;
+}
+
+body.theme-dark .profile-password-card {
+  border-top-color: #1f2937;
+}
+
+body.theme-dark .profile-password-title {
+  color: #e2e8f0;
+}
+
+body.theme-dark .profile-password-body {
+  background: #111827;
+  border-color: #1f2937;
+}
+
+body.theme-dark .profile-password-error {
+  color: #fca5a5;
+}
+
+body.theme-dark .profile-password-success {
+  color: #86efac;
 }
 
 

@@ -178,6 +178,24 @@ body.theme-dark .settings-action-btn:hover {
   transform: translateX(22px);
 }
 
+.toggle input:disabled + .toggle-slider {
+  background: #e2e8f0;
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.toggle input:disabled + .toggle-slider::before {
+  box-shadow: none;
+}
+
+.toggle input:disabled:checked + .toggle-slider {
+  background: #e2e8f0;
+}
+
+.toggle input:disabled:checked + .toggle-slider::before {
+  transform: translateX(3px);
+}
+
 .account-card {
   display: flex;
   align-items: center;

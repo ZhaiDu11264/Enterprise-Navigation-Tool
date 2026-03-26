@@ -9,6 +9,7 @@
   scrollbar-gutter: stable;
   display: flex;
   flex-direction: column;
+  --content-max-width: 1600px;
 }
 
 /* Force visible scrollbar */
@@ -31,9 +32,9 @@
 
 
 .dashboard-header {
-  background: white;
-  padding: 1rem 5.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  background: transparent;
+  padding: 0.75rem 3rem;
+  box-shadow: none;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -43,12 +44,17 @@
 }
 
 .search-section {
-  background: white;
-  padding: 1.5rem 1.5rem;
+  background: transparent;
+  padding: 1.5rem var(--content-side-padding, 20rem);
   border-bottom: none;
   position: relative;
   overflow: visible;
   z-index: 30;
+  display: flex;
+  justify-content: center;
+  max-width: var(--content-max-width);
+  width: 100%;
+  margin: 0 auto;
 }
 
 /* Immersive mode (default) */
@@ -315,38 +321,6 @@
   background: rgba(255, 255, 255, 0.28);
 }
 
-/* Transparent Mode */
-body.transparent-mode .dashboard-page {
-  background: url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80') center center / cover no-repeat fixed;
-}
-
-body.transparent-mode .dashboard-page::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(1px);
-  z-index: 0;
-  pointer-events: none;
-}
-
-body.transparent-mode .dashboard-header {
-  background: rgba(255, 255, 255, 0.4);
-  backdrop-filter: blur(20px);
-  border-bottom: none;
-}
-
-body.transparent-mode .search-section {
-  background: rgba(255, 255, 255, 0.4);
-  backdrop-filter: blur(20px);
-  border-bottom: none;
-}
-
 .header-actions {
   display: flex;
   align-items: center;
@@ -529,14 +503,14 @@ body.theme-dark .feedback-btn {
 
 .dashboard-header h1 {
   margin: 0;
-  color: #333;
+  color: #000000;
   font-size: 1.5rem;
   font-weight: 600;
 }
 
 .dashboard-content {
-  padding: 1rem 9.5rem;
-  max-width: 2400px;
+  padding: 1rem var(--content-side-padding, 20rem);
+  max-width: var(--content-max-width);
   width: 100%;
   margin: 0 auto;
   position: relative;
@@ -558,13 +532,13 @@ body.theme-dark .dashboard-page {
 }
 
 body.theme-dark .dashboard-header {
-  background: #111827;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  background: transparent;
+  box-shadow: none;
   border-bottom: none;
 }
 
 body.theme-dark .search-section {
-  background: #111827;
+  background: transparent;
   border-bottom: none;
 }
 
@@ -604,28 +578,6 @@ body.theme-dark .notification-dropdown-meta {
 
 body.theme-dark .notification-dropdown-empty {
   color: #94a3b8;
-}
-
-/* Dark Mode + Transparent Mode */
-body.theme-dark.transparent-mode .dashboard-page {
-  background: url('https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1920&q=80') center center / cover no-repeat fixed;
-}
-
-body.theme-dark.transparent-mode .dashboard-page::before {
-  background: rgba(15, 23, 42, 0.15);
-  backdrop-filter: blur(1px);
-}
-
-body.theme-dark.transparent-mode .dashboard-header {
-  background: rgba(17, 24, 39, 0.4);
-  backdrop-filter: blur(20px);
-  border-bottom: none;
-}
-
-body.theme-dark.transparent-mode .search-section {
-  background: rgba(17, 24, 39, 0.4);
-  backdrop-filter: blur(20px);
-  border-bottom: none;
 }
 
 body.theme-dark .dashboard-header h1 {

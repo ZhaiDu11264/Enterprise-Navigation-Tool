@@ -13,6 +13,8 @@
   box-shadow: none;
   border: 1px solid #e2e8f0;
   overflow: hidden;
+  max-width: var(--content-max-width, 2000px);
+  margin: 0 auto;
 }
 
 body.theme-dark .tabs-container {

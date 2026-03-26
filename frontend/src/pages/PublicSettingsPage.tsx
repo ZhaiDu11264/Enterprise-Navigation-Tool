@@ -1,11 +1,17 @@
-import React, { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useSettings } from '../contexts/SettingsContext';
 import lakeBackground from '../assets/difusionastrouc-lake-6295829_1920.jpg';
 import './PublicSettingsPage.css';
+import { LoginModal } from '../components/auth/LoginModal';
 
 export function PublicSettingsPage() {
   const { language } = useLanguage();
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  const { setTransparentMode } = useSettings();
   const t = useMemo(() => (language === 'zh'
     ? {
         title: '\u6e38\u5ba2\u8bbe\u7f6e',
@@ -34,6 +40,20 @@ export function PublicSettingsPage() {
     return Number.isFinite(value) ? value : 1;
   });
 
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
+  // 未登录的临时设置页也强制不透明
+  useEffect(() => {
+    setTransparentMode(false);
+  }, [setTransparentMode]);
+
+  // 登录后跳到后台
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
+
   const handleScaleChange = (value: number) => {
     setIconScale(value);
     sessionStorage.setItem('guestIconScale', String(value));
@@ -56,9 +76,13 @@ export function PublicSettingsPage() {
           <Link to="/" className="guest-settings-btn">
             {t.back}
           </Link>
-          <Link to="/login" className="guest-settings-btn primary">
+          <button
+            type="button"
+            className="guest-settings-btn primary"
+            onClick={() => setShowLoginModal(true)}
+          >
             {t.login}
-          </Link>
+          </button>
         </div>
       </header>
 
@@ -91,6 +115,8 @@ export function PublicSettingsPage() {
           </button>
         </section>
       </main>
+
+      <LoginModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} />
     </div>
   );
 }

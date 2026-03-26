@@ -11,11 +11,17 @@ interface SettingsContextValue {
   setDarkMode: (enabled: boolean) => void;
   compactMode: boolean;
   setCompactMode: (enabled: boolean) => void;
+  transparentMode: boolean;
+  setTransparentMode: (enabled: boolean) => void;
+  contentSidePadding: number;
+  setContentSidePadding: (value: number) => void;
 }
 
 const SettingsContext = createContext<SettingsContextValue | undefined>(undefined);
 
 const DEFAULTS_VERSION = 'v2';
+const DEFAULT_CONTENT_SIDE_PADDING = 20;
+const LEGACY_CONTENT_SIDE_PADDING = 9.5;
 
 const shouldApplyDefaults = (): boolean => {
   return localStorage.getItem('ui_defaults_version') !== DEFAULTS_VERSION;
@@ -73,12 +79,32 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       ? true
       : localStorage.getItem('ui_compact_mode') === 'true' || !localStorage.getItem('ui_compact_mode')
   );
+  const [transparentMode, setTransparentMode] = useState(() =>
+    shouldApplyDefaults()
+      ? false
+      : localStorage.getItem('ui_transparent_mode') === 'true'
+  );
+  const [contentSidePadding, setContentSidePadding] = useState(() => {
+    if (shouldApplyDefaults()) {
+      return DEFAULT_CONTENT_SIDE_PADDING;
+    }
+    const raw = Number(localStorage.getItem('ui_content_side_padding') || String(DEFAULT_CONTENT_SIDE_PADDING));
+    if (!Number.isFinite(raw)) {
+      return DEFAULT_CONTENT_SIDE_PADDING;
+    }
+    // 如果之前的默认值是旧的 9.5，就自动迁移到 20，确保“所有人默认都变成 20”
+    return raw === LEGACY_CONTENT_SIDE_PADDING ? DEFAULT_CONTENT_SIDE_PADDING : raw;
+  });
 
   useEffect(() => {
     if (!shouldApplyDefaults()) {
       return;
     }
     localStorage.setItem('ui_defaults_version', DEFAULTS_VERSION);
+    localStorage.setItem('ui_transparent_mode', 'false');
+    setTransparentMode(false);
+    localStorage.setItem('ui_content_side_padding', String(DEFAULT_CONTENT_SIDE_PADDING));
+    setContentSidePadding(DEFAULT_CONTENT_SIDE_PADDING);
   }, []);
 
   useEffect(() => {
@@ -101,9 +127,15 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   }, [darkMode]);
 
   useEffect(() => {
-    document.body.classList.remove('transparent-mode');
-    localStorage.removeItem('ui_transparent_mode');
-  }, []);
+    document.body.classList.toggle('transparent-mode', transparentMode);
+    localStorage.setItem('ui_transparent_mode', String(transparentMode));
+  }, [transparentMode]);
+
+  useEffect(() => {
+    const value = Number.isFinite(contentSidePadding) ? contentSidePadding : DEFAULT_CONTENT_SIDE_PADDING;
+    document.documentElement.style.setProperty('--content-side-padding', `${value}rem`);
+    localStorage.setItem('ui_content_side_padding', String(value));
+  }, [contentSidePadding]);
 
   useEffect(() => {
     localStorage.setItem('ui_compact_mode', String(compactMode));
@@ -128,8 +160,12 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     darkMode,
     setDarkMode,
     compactMode,
-    setCompactMode
-  }), [gridSize, getGridColumns, getCompactGridColumns, darkMode, compactMode]);
+    setCompactMode,
+    transparentMode,
+    setTransparentMode,
+    contentSidePadding,
+    setContentSidePadding
+  }), [gridSize, getGridColumns, getCompactGridColumns, darkMode, compactMode, transparentMode, contentSidePadding]);
 
   return (
     <SettingsContext.Provider value={value}>

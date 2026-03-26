@@ -1,6 +1,8 @@
 import React, { ReactNode } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { LoginModal } from './LoginModal';
+import { useSettings } from '../../contexts/SettingsContext';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -10,6 +12,15 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRouteProps) {
   const { isAuthenticated, user, isLoading } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+  const { setTransparentMode } = useSettings();
+
+  React.useEffect(() => {
+    // 未登录时强制不透明，避免沿用管理员开启的透明模式视觉残留
+    if (!isAuthenticated) {
+      setTransparentMode(false);
+    }
+  }, [isAuthenticated, setTransparentMode]);
 
   // Show loading spinner while checking authentication
   if (isLoading) {
@@ -22,7 +33,7 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
 
   // Redirect to login if not authenticated
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <LoginModal isOpen={true} onClose={() => navigate('/')} />;
   }
 
   // Check admin requirement

@@ -1,62 +1,39 @@
+/* 默认非通透模式 */
 .guest-home,
 .dashboard-page.guest-home {
-  background-color: #c7d2fe !important;
+  background-color: transparent;
 }
 
-body.transparent-mode .guest-home::before,
-body.transparent-mode .dashboard-page.guest-home::before {
-  content: none !important;
-  display: none !important;
+/* 通透模式 */
+.guest-home.immersive,
+.dashboard-page.guest-home.immersive {
+  background-color: transparent !important;
 }
 
 .guest-header,
 .guest-search {
+  position: relative;
+  z-index: 2;
+}
+
+
+
+
+
+/* 通透模式样式 */
+.guest-home.immersive .dashboard-header {
   background: transparent;
   box-shadow: none;
   border: none;
   backdrop-filter: none;
 }
 
-.guest-header {
-  position: relative;
-  z-index: 2;
-}
-
-.guest-search {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: relative;
-  z-index: 2;
-}
-
-.guest-content {
-  position: relative;
-  z-index: 2;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding-top: 1rem;
-  padding-bottom: 30vh;
-}
-
-.guest-home .navigation-view {
-  max-width: 1100px;
-  margin: 0 auto;
-}
-
-.guest-home .dashboard-header {
-  background: transparent;
-  box-shadow: none;
-  border: none;
-  backdrop-filter: none;
-}
-
-.guest-home .dashboard-header h1 {
+.guest-home.immersive .dashboard-header h1 {
   color: rgba(255, 255, 255, 0.95);
   text-shadow: 0 6px 18px rgba(15, 23, 42, 0.35);
 }
 
-.guest-home .admin-link-btn {
+.guest-home.immersive .admin-link-btn {
   background: rgba(255, 255, 255, 0.18);
   color: #ffffff;
   border: none;
@@ -64,77 +41,77 @@ body.transparent-mode .dashboard-page.guest-home::before {
   backdrop-filter: blur(6px);
 }
 
-.guest-home .search-input-container {
+.guest-home.immersive .search-input-container {
   background: rgba(255, 255, 255, 0.22);
   border: none;
   box-shadow: none;
   backdrop-filter: blur(10px);
 }
 
-.guest-home .search-input-container:focus-within {
+.guest-home.immersive .search-input-container:focus-within {
   border: none;
   box-shadow: none;
 }
 
-.guest-home .search-input,
-.guest-home .search-input::placeholder,
-.guest-home .search-btn,
-.guest-home .clear-btn {
+.guest-home.immersive .search-input,
+.guest-home.immersive .search-input::placeholder,
+.guest-home.immersive .search-btn,
+.guest-home.immersive .clear-btn {
   color: rgba(255, 255, 255, 0.95);
 }
 
-.guest-home .search-input::placeholder {
+.guest-home.immersive .search-input::placeholder {
   color: rgba(255, 255, 255, 0.7);
 }
 
-.guest-home .search-source-label,
-.guest-home .ai-source-label {
+.guest-home.immersive .search-source-label,
+.guest-home.immersive .ai-source-label {
   color: rgba(255, 255, 255, 0.7);
 }
 
-.guest-home .search-source-select,
-.guest-home .ai-source-select {
+.guest-home.immersive .search-source-select,
+.guest-home.immersive .ai-source-select {
   color: transparent;
   text-shadow: 0 0 0 transparent;
   caret-color: transparent;
 }
 
-.guest-home .engine-short {
+.guest-home.immersive .engine-short {
   color: rgba(255, 255, 255, 0.9);
   background: rgba(255, 255, 255, 0.18);
 }
 
-.guest-home .search-source-select option,
-.guest-home .ai-source-select option {
+.guest-home.immersive .search-source-select option,
+.guest-home.immersive .ai-source-select option {
   color: #ffffff;
   background: rgba(15, 23, 42, 0.6);
 }
 
-.guest-home .ai-toggle {
+.guest-home.immersive .ai-toggle {
   background: rgba(15, 23, 42, 0.75);
   color: #ffffff;
 }
 
-.guest-home .ai-toggle.active {
+.guest-home.immersive .ai-toggle.active {
   background: rgba(37, 99, 235, 0.9);
 }
 
-.guest-home .link-card {
+.guest-home.immersive .link-card {
   background: rgba(255, 255, 255, 0.08);
   border: none;
   box-shadow: none;
   backdrop-filter: blur(8px);
 }
 
-.guest-home .card-icon {
+.guest-home.immersive .card-icon {
   background: rgba(255, 255, 255, 0.16);
 }
 
-.guest-home .link-card:hover {
+.guest-home.immersive .link-card:hover {
   box-shadow: none;
 }
 
-.guest-home .top-controls {
+.guest-home.immersive .top-controls {
   background: transparent;
   border: none;
   box-shadow: none;
@@ -142,59 +119,70 @@ body.transparent-mode .dashboard-page.guest-home::before {
   padding: 0;
 }
 
-.guest-home .tabs-container {
+.guest-home.immersive .tabs-container {
   background: transparent;
   border: none;
   box-shadow: none;
   padding: 0;
 }
 
-.guest-home .tab {
+.guest-home.immersive .tab {
   color: rgba(255, 255, 255, 0.9);
 }
 
-.guest-home .tab:hover {
+.guest-home.immersive .tab:hover {
   background: rgba(255, 255, 255, 0.12);
 }
 
-.guest-home .tab.active {
+.guest-home.immersive .tab.active {
   background: rgba(255, 255, 255, 0.22);
   color: rgba(255, 255, 255, 0.95);
   box-shadow: none;
 }
 
-.guest-home .grouped-list,
-.guest-home .grouped-section,
-.guest-home .grouped-header,
-.guest-home .grouped-links {
+.guest-home.immersive .grouped-list,
+.guest-home.immersive .grouped-section,
+.guest-home.immersive .grouped-header,
+.guest-home.immersive .grouped-links {
   background: transparent;
   box-shadow: none;
   border: none;
 }
 
-.guest-home .draggable-list-item,
-.guest-home .grouped-section-body.grid-layout .draggable-list-item {
+.guest-home.immersive .draggable-list-item,
+.guest-home.immersive .grouped-section-body.grid-layout .draggable-list-item {
   background: transparent;
   border: none;
   box-shadow: none;
 }
 
-.guest-home .grouped-name,
-.guest-home .grouped-count,
-.guest-home .link-count,
-.guest-home .recommended-title {
+.guest-home.immersive .grouped-name,
+.guest-home.immersive .grouped-count,
+.guest-home.immersive .link-count,
+.guest-home.immersive .recommended-title {
   color: rgba(255, 255, 255, 0.9);
 }
 
-.guest-home .grouped-count {
+.guest-home.immersive .grouped-count {
   background: rgba(15, 23, 42, 0.35);
 }
 
-.guest-home .card-title,
-.guest-home .card-description,
-.guest-home .card-url,
-.guest-home .card-group {
+.guest-home.immersive .card-title,
+.guest-home.immersive .card-description,
+.guest-home.immersive .card-url,
+.guest-home.immersive .card-group {
   color: rgba(255, 255, 255, 0.92);
+}
+
+.guest-content {
+  position: relative;
+  z-index: 2;
+}
+
+.guest-home .navigation-view {
+  /* 根据内容左右留白，动态调整导航内容最大宽度（让图标左右留白可见变化）。 */
+  max-width: max(320px, calc(1100px - 2 * (var(--content-side-padding, 20rem) - 20rem)));
+  margin: 0 auto;
 }
 
 @media (max-width: 768px) {

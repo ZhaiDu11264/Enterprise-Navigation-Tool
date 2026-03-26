@@ -1,15 +1,17 @@
-import React, { useMemo, useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useSettings } from '../contexts/SettingsContext';
 import { NavigationView } from '../components/navigation';
 import { SearchInterface } from '../components/navigation/SearchInterface';
 import { SettingsModal } from '../components/common';
+import { LoginModal } from '../components/auth/LoginModal';
 import { GridSize } from '../contexts/SettingsContext';
 import { Group, WebsiteLink } from '../types';
 import { api } from '../services/api';
 import lakeBackground from '../assets/difusionastrouc-lake-6295829_1920.jpg';
-import './PublicHomePage.css';
+import './DashboardPage.css';
 
 type RecommendedSite = {
   name: string;
@@ -59,11 +61,14 @@ const createSites = (): RecommendedSite[] => ([
 export function PublicHomePage() {
   const { isAuthenticated, isLoading } = useAuth();
   const { language, setLanguage } = useLanguage();
+  const { setTransparentMode } = useSettings();
   const sites = useMemo(() => createSites(), []);
+
+
 
   const t = language === 'zh'
     ? {
-      title: '\u4f01\u4e1a\u7f51\u5740\u5bfc\u822a',
+      title: '\u7f51\u5740\u5bfc\u822a',
         login: '\u767b\u5f55',
         settings: '\u8bbe\u7f6e',
         groupsLabel: '\u5168\u90e8',
@@ -71,6 +76,8 @@ export function PublicHomePage() {
         settingsTitle: '\u8bbe\u7f6e',
         darkMode: '\u6df1\u8272\u6a21\u5f0f',
         compactMode: '\u7d27\u51d1\u663e\u793a',
+        transparentMode: '\u901a\u900f\u6a21\u5f0f',
+        contentSidePadding: '\u5185\u5bb9\u5de6\u53f3\u7559\u767d',
         language: '\u8bed\u8a00',
         gridSize: '\u56fe\u6807\u5927\u5c0f',
         gridSizeSmall: '\u5c0f(\u6bcf\u884c\u66f4\u591a)',
@@ -91,6 +98,8 @@ export function PublicHomePage() {
         settingsTitle: 'Settings',
         darkMode: 'Dark mode',
         compactMode: 'Compact view',
+        transparentMode: 'Transparent mode',
+        contentSidePadding: 'Content side padding',
         language: 'Language',
         gridSize: 'Icon Size',
         gridSizeSmall: 'Small (More per row)',
@@ -135,7 +144,12 @@ export function PublicHomePage() {
     return sessionStorage.getItem('guestCompactMode') === 'true';
   });
 
+  const [guestTransparentMode, setGuestTransparentMode] = useState(() => {
+    return sessionStorage.getItem('guestTransparentMode') === 'true';
+  });
+
   const [showSettings, setShowSettings] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   const guestGridConfigs = {
     'small': {
@@ -178,7 +192,12 @@ export function PublicHomePage() {
     sessionStorage.setItem('guestDefaultsVersion', GUEST_DEFAULTS_VERSION);
     sessionStorage.setItem('guestGridSize', 'small');
     sessionStorage.setItem('guestCompactMode', 'true');
+    sessionStorage.setItem('guestTransparentMode', 'false');
   }, []);
+
+  React.useEffect(() => {
+    setTransparentMode(guestTransparentMode);
+  }, [guestTransparentMode, setTransparentMode]);
 
   const searchEngines = useMemo(() => ([
     {
@@ -388,9 +407,9 @@ export function PublicHomePage() {
 
   return (
     <div
-      className="dashboard-page guest-home"
+      className={`dashboard-page${guestTransparentMode ? ' immersive' : ''}`}
       style={{
-        backgroundImage: `linear-gradient(160deg, rgba(15, 23, 42, ${guestDarkMode ? '0.55' : '0.35'}), rgba(15, 23, 42, ${guestDarkMode ? '0.15' : '0.05'})), url(${lakeBackground})`,
+        backgroundImage: `linear-gradient(160deg, rgba(15, 23, 42, 0.35), rgba(15, 23, 42, 0.05)), url(${lakeBackground})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
@@ -402,22 +421,26 @@ export function PublicHomePage() {
         ['--padding-scale' as any]: activeGridConfig.paddingScale
       }}
     >
-      <header className="dashboard-header guest-header">
+      <header className="dashboard-header">
         <h1>{t.title}</h1>
         <div className="header-actions">
-          <Link to="/login" className="admin-link-btn">
+          <button
+            type="button"
+            className="admin-link-btn"
+            onClick={() => setShowLoginModal(true)}
+          >
             {t.login}
-          </Link>
+          </button>
         </div>
       </header>
 
-      <div className="search-section guest-search">
+      <div className="search-section">
         <SearchInterface
           onLinkClick={handleLinkClick}
           onSearchResultsChange={() => {}}
           onQueryChange={() => {}}
           placeholder={language === 'zh'
-            ? '\u5728\u767e\u5ea6\u4e2d\u641c\u7d22\uff0c\u6216\u8005\u8f93\u5165\u4e00\u4e2a\u7f51\u5740'
+            ? '在百度中搜索，或者输入一个网址'
             : 'Search with Baidu or enter a URL'}
           searchEngines={searchEngines}
           aiSearchEngines={aiSearchEngines}
@@ -426,7 +449,7 @@ export function PublicHomePage() {
         />
       </div>
 
-      <main className="dashboard-content guest-content">
+      <main className="dashboard-content">
         <NavigationView
           groups={publicGroups ?? data.groups}
           links={publicLinks ?? data.links}
@@ -462,6 +485,17 @@ export function PublicHomePage() {
             return next;
           });
         }}
+        transparentMode={guestTransparentMode}
+        onToggleTransparentMode={() => {
+          setGuestTransparentMode(prev => {
+            const next = !prev;
+            sessionStorage.setItem('guestTransparentMode', String(next));
+            return next;
+          });
+        }}
+        transparentModeToggleDisabled={false}
+        contentSidePadding={20}
+        onChangeContentSidePadding={() => {}}
         language={language}
         onLanguageChange={setLanguage}
         gridSize={guestGridSize}
@@ -474,6 +508,8 @@ export function PublicHomePage() {
           title: t.settingsTitle,
           darkMode: t.darkMode,
           compactMode: t.compactMode,
+          transparentMode: t.transparentMode,
+          contentSidePadding: t.contentSidePadding,
           language: t.language,
           gridSize: t.gridSize,
           gridSizeSmall: t.gridSizeSmall,
@@ -485,6 +521,9 @@ export function PublicHomePage() {
           close: t.close
         }}
       />
+
+      {/* 未登录时，用弹窗登录而不是跳转到 /login */}
+      <LoginModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} />
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
 import './LogoutButton.css';
@@ -10,6 +11,7 @@ interface LogoutButtonProps {
 
 export function LogoutButton({ className = '', showConfirm = true }: LogoutButtonProps) {
   const { language } = useLanguage();
+  const navigate = useNavigate();
   const translations = {
     en: {
       confirmTitle: 'Confirm Logout',
@@ -42,6 +44,8 @@ export function LogoutButton({ className = '', showConfirm = true }: LogoutButto
     setIsLoggingOut(true);
     try {
       await logout();
+      // 退出后回到未登录页（Home）
+      navigate('/');
     } catch (error) {
       console.error('Logout error:', error);
     } finally {

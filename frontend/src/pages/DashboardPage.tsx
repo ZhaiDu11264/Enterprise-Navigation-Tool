@@ -28,8 +28,8 @@ export function DashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { language, setLanguage } = useLanguage();
-  const { gridSize, setGridSize } = useSettings();
-  const { darkMode, setDarkMode, compactMode, setCompactMode } = useSettings();
+  const { gridSize, setGridSize, contentSidePadding, setContentSidePadding } = useSettings();
+  const { darkMode, setDarkMode, compactMode, setCompactMode, transparentMode, setTransparentMode } = useSettings();
   const [groups, setGroups] = useState<Group[]>([]);
   const [links, setLinks] = useState<WebsiteLink[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,6 +70,8 @@ export function DashboardPage() {
       settingsTitle: 'Settings',
       darkMode: 'Dark mode',
       compactMode: 'Compact view',
+      transparentMode: 'Transparent mode',
+      contentSidePadding: 'Content side padding',
       language: 'Language',
       gridSize: 'Icon Size',
       gridSizeSmall: 'Small (More per row)',
@@ -125,7 +127,7 @@ export function DashboardPage() {
       }
     },
         zh: {
-      title: '\u4f01\u4e1a\u7f51\u5740\u5bfc\u822a',
+      title: '\u7f51\u5740\u5bfc\u822a',
       addLink: '\u6dfb\u52a0\u94fe\u63a5',
       addGroup: '\u6dfb\u52a0\u5206\u7ec4',
       adminTools: '\u7ba1\u7406\u5de5\u5177',
@@ -140,6 +142,8 @@ export function DashboardPage() {
       settingsTitle: '\u8bbe\u7f6e',
       darkMode: '\u6df1\u8272\u6a21\u5f0f',
       compactMode: '\u7d27\u51d1\u663e\u793a',
+      transparentMode: '\u901a\u900f\u6a21\u5f0f',
+      contentSidePadding: '\u5185\u5bb9\u5de6\u53f3\u7559\u767d',
       language: '\u8bed\u8a00',
       gridSize: '\u56fe\u6807\u5927\u5c0f',
       gridSizeSmall: '\u5c0f(\u6bcf\u884c\u66f4\u591a)',
@@ -568,7 +572,7 @@ export function DashboardPage() {
 
   return (
     <div
-      className="dashboard-page immersive"
+      className={`dashboard-page${transparentMode ? ' immersive' : ''}`}
       style={{
         backgroundImage: `linear-gradient(160deg, rgba(15, 23, 42, 0.35), rgba(15, 23, 42, 0.05)), url(${lakeBackground})`,
         backgroundSize: 'cover',
@@ -751,6 +755,10 @@ export function DashboardPage() {
         onToggleDarkMode={() => setDarkMode(!darkMode)}
         compactMode={compactMode}
         onToggleCompactMode={() => setCompactMode(!compactMode)}
+        transparentMode={transparentMode}
+        onToggleTransparentMode={() => setTransparentMode(!transparentMode)}
+        contentSidePadding={contentSidePadding}
+        onChangeContentSidePadding={setContentSidePadding}
         language={language}
         onLanguageChange={setLanguage}
         gridSize={gridSize}
@@ -760,6 +768,8 @@ export function DashboardPage() {
           title: t.settingsTitle,
           darkMode: t.darkMode,
           compactMode: t.compactMode,
+          transparentMode: t.transparentMode,
+          contentSidePadding: t.contentSidePadding,
           language: t.language,
           gridSize: t.gridSize,
           gridSizeSmall: t.gridSizeSmall,

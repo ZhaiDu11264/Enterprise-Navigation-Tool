@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { User } from '../../types';
 import { GridSize } from '../../contexts/SettingsContext';
 import './SettingsModal.css';
@@ -10,6 +10,11 @@ interface SettingsModalProps {
   onToggleDarkMode: () => void;
   compactMode: boolean;
   onToggleCompactMode: () => void;
+  transparentMode: boolean;
+  onToggleTransparentMode: () => void;
+  transparentModeToggleDisabled?: boolean;
+  contentSidePadding: number;
+  onChangeContentSidePadding: (value: number) => void;
   language: 'en' | 'zh';
   onLanguageChange: (language: 'en' | 'zh') => void;
   gridSize: GridSize;
@@ -20,6 +25,8 @@ interface SettingsModalProps {
     title: string;
     darkMode: string;
     compactMode: string;
+    transparentMode: string;
+    contentSidePadding: string;
     language: string;
     gridSize: string;
     gridSizeSmall: string;
@@ -41,6 +48,11 @@ export function SettingsModal({
   onToggleDarkMode,
   compactMode,
   onToggleCompactMode,
+  transparentMode,
+  onToggleTransparentMode,
+  transparentModeToggleDisabled = false,
+  contentSidePadding,
+  onChangeContentSidePadding,
   language,
   onLanguageChange,
   gridSize,
@@ -115,6 +127,36 @@ export function SettingsModal({
               <span className="toggle-slider"></span>
             </label>
           </section>
+
+          <section className="settings-section">
+            <div className="settings-section-title">{labels.transparentMode}</div>
+            <label className="toggle">
+              <input
+                type="checkbox"
+                checked={transparentMode}
+                onChange={onToggleTransparentMode}
+                disabled={transparentModeToggleDisabled}
+              />
+              <span className="toggle-slider"></span>
+            </label>
+          </section>
+
+          {user?.role === 'admin' && (
+            <section className="settings-section">
+              <div className="settings-section-title">{labels.contentSidePadding}</div>
+              <div className="settings-range">
+                <input
+                  type="range"
+                  min={2}
+                  max={24}
+                  step={0.5}
+                  value={contentSidePadding}
+                  onChange={(event) => onChangeContentSidePadding(Number(event.target.value))}
+                />
+                <span className="settings-range-value">{contentSidePadding.toFixed(1)}rem</span>
+              </div>
+            </section>
+          )}
 
           <section className="settings-section">
             <div className="settings-section-title">{labels.language}</div>
